@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Load Bills</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Inter', sans-serif; background: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+  .card { max-width: 480px; width: 100%; border: 1px solid #e5e5e5; border-radius: 12px; padding: 32px; text-align: center; }
+  h1 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  p { font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 24px; }
+  .list { text-align: left; font-size: 13px; color: #333; background: #f8f8f8; border-radius: 8px; padding: 16px; margin-bottom: 24px; line-height: 2; }
+  button { width: 100%; padding: 14px; background: #111; color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
+  button:hover { background: #333; }
+  button:disabled { background: #888; cursor: not-allowed; }
+  #status { margin-top: 16px; font-size: 14px; color: #555; min-height: 24px; }
+  #status.ok { color: #16a34a; font-weight: 600; }
+  #status.err { color: #dc2626; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Load Recurring Bills</h1>
+  <p>This will add 23 recurring bills found in your Wells Fargo statements (Jan, Feb, Mar 2026) into your finance app. All bills are fully editable after loading.</p>
+
+  <div class="list">
+    Mortgage · HOA · Metro Utilities · OPPD · Cox<br>
+    Gretna Sanitation · Vivint · Progressive Insurance<br>
+    American National Bank Loan · Ally Car Payment<br>
+    Citizens Line of Credit · Andrew's Student Loan<br>
+    WF Credit Card (Rian) · WF Credit Card (Andrew)<br>
+    Chase Credit Card · Synchrony Bank<br>
+    Life Time Fitness · Nerve CrossFit · Doppler Vet<br>
+    Hulu · Netflix · Spotify · Club Car Wash
+  </div>
+
+  <button id="btn" onclick="loadBills()">Load all 23 bills into my app</button>
+  <div id="status"></div>
+</div>
+
+<script>
+const SB_URL = 'https://sumnlntgnycrctiohkzm.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1bW5sbnRnbnljcmN0aW9oa3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NDI1MzcsImV4cCI6MjA5MDIxODUzN30.cgW_VlbCBB51i7ZcXmut9HZe5viaRNYVMwJ2dL3DS9g';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+const BILLS = [
+  { name: 'West Gate Bank Mortgage',       amount: 1765.59, due: '2026-04-13', category: 'Housing',        recurring: true },
+  { name: 'Westbury Creek HOA',            amount: 129.04,  due: '2026-04-08', category: 'Housing',        recurring: true },
+  { name: 'Metropolitan Utilities',        amount: 131.00,  due: '2026-04-13', category: 'Utilities',      recurring: true },
+  { name: 'Omaha Public Power (OPPD)',     amount: 145.00,  due: '2026-04-16', category: 'Utilities',      recurring: true },
+  { name: 'Cox Internet',                  amount: 72.00,   due: '2026-04-25', category: 'Utilities',      recurring: true },
+  { name: 'Gretna Sanitation',             amount: 57.92,   due: '2026-04-01', category: 'Utilities',      recurring: true },
+  { name: 'Vivint Security',               amount: 39.06,   due: '2026-04-03', category: 'Housing',        recurring: true },
+  { name: 'American National Bank Loan',   amount: 618.24,  due: '2026-04-19', category: 'Debt',           recurring: true },
+  { name: 'Ally Car Payment',              amount: 631.31,  due: '2026-04-25', category: 'Transportation', recurring: true },
+  { name: 'Citizens Pay Line of Credit',   amount: 62.06,   due: '2026-04-04', category: 'Debt',           recurring: true },
+  { name: 'Student Loan - Andrew',         amount: 47.00,   due: '2026-04-03', category: 'Debt',           recurring: true },
+  { name: 'WF Credit Card - Rian',         amount: 98.00,   due: '2026-04-02', category: 'Debt',           recurring: true },
+  { name: 'WF Credit Card - Andrew',       amount: 213.00,  due: '2026-04-02', category: 'Debt',           recurring: true },
+  { name: 'Chase Credit Card - Rian',      amount: 157.00,  due: '2026-04-06', category: 'Debt',           recurring: true },
+  { name: 'Synchrony Bank',               amount: 141.00,  due: '2026-04-04', category: 'Debt',           recurring: true },
+  { name: 'Progressive Insurance',         amount: 262.83,  due: '2026-04-24', category: 'Insurance',      recurring: true },
+  { name: 'Life Time Fitness',             amount: 298.53,  due: '2026-04-02', category: 'Health',         recurring: true },
+  { name: 'Nerve CrossFit',               amount: 65.50,   due: '2026-04-02', category: 'Health',         recurring: true },
+  { name: 'Doppler Veterinary',            amount: 60.00,   due: '2026-04-18', category: 'Pet Care',       recurring: true },
+  { name: 'Hulu',                          amount: 100.21,  due: '2026-04-21', category: 'Subscriptions',  recurring: true },
+  { name: 'Netflix',                       amount: 8.43,    due: '2026-04-23', category: 'Subscriptions',  recurring: true },
+  { name: 'Spotify',                       amount: 20.03,   due: '2026-04-03', category: 'Subscriptions',  recurring: true },
+  { name: 'Club Car Wash Gold',            amount: 25.68,   due: '2026-04-27', category: 'Transportation', recurring: true },
+];
+
+async function loadBills() {
+  const btn = document.getElementById('btn');
+  const status = document.getElementById('status');
+  btn.disabled = true;
+  btn.textContent = 'Loading…';
+  status.className = '';
+  status.textContent = 'Saving to Supabase…';
+
+  try {
+    // Get existing bills from Supabase
+    const { data: existing } = await sb.from('finance_data').select('value').eq('key', 'p_bills').single();
+    const currentBills = existing ? existing.value : [];
+
+    // Add new bills with unique IDs
+    const newBills = BILLS.map(b => ({
+      id: uid(),
+      name: b.name,
+      amount: b.amount,
+      due: b.due,
+      category: b.category,
+      recurring: b.recurring,
+      paid: false,
+      paidDate: ''
+    }));
+
+    const merged = [...currentBills, ...newBills];
+
+    // Save to Supabase
+    const { error } = await sb.from('finance_data').upsert(
+      { key: 'p_bills', value: merged, updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    );
+    if (error) throw error;
+
+    // Also save to localStorage as backup
+    localStorage.setItem('hf_p_bills', JSON.stringify(merged));
+
+    status.className = 'ok';
+    status.textContent = '23 bills loaded! Redirecting to the app…';
+    btn.textContent = 'Done!';
+
+    setTimeout(() => { window.location.href = '/'; }, 1500);
+
+  } catch(e) {
+    console.error(e);
+    // Fallback: save to localStorage only
+    const currentLocal = localStorage.getItem('hf_p_bills');
+    const currentBills = currentLocal ? JSON.parse(currentLocal) : [];
+    const newBills = BILLS.map(b => ({
+      id: uid(), name: b.name, amount: b.amount, due: b.due,
+      category: b.category, recurring: b.recurring, paid: false, paidDate: ''
+    }));
+    localStorage.setItem('hf_p_bills', JSON.stringify([...currentBills, ...newBills]));
+
+    status.className = 'ok';
+    status.textContent = 'Saved locally! Redirecting…';
+    setTimeout(() => { window.location.href = '/'; }, 1500);
+  }
+}
+</script>
+</body>
+</html>

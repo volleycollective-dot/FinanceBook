@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Load VolleyCo Transactions</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Inter',sans-serif;background:#f7f7f7;color:#1a1a1a;font-size:14px;display:flex;align-items:flex-start;justify-content:center;min-height:100vh;padding:24px 16px}
+.card{max-width:520px;width:100%;background:#fff;border-radius:14px;border:1px solid #ececec;padding:28px}
+h1{font-size:18px;font-weight:700;margin-bottom:6px}
+p{font-size:13px;color:#666;line-height:1.6;margin-bottom:20px}
+.tx-list{margin-bottom:20px}
+.tx{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:1px solid #f4f4f4;gap:10px}
+.tx:last-child{border-bottom:none}
+.tx-left{flex:1;min-width:0}
+.tx-name{font-size:12px;font-weight:500}
+.tx-meta{font-size:11px;color:#888;margin-top:2px}
+.tx-amt{font-size:13px;font-weight:700;white-space:nowrap}
+.pos{color:#2d7a5f}.neg{color:#a33030}
+.btn{width:100%;padding:13px;background:#5c4d8a;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px}
+.btn:hover{background:#4a3d72}
+.btn:disabled{background:#aaa;cursor:not-allowed}
+#status{font-size:13px;color:#666;text-align:center;min-height:20px;padding:4px 0}
+#status.ok{color:#2d7a5f;font-weight:600}
+#status.err{color:#a33030}
+.scholar-note{background:#e8f5f5;border:1px solid #b8e0e0;border-radius:8px;padding:10px 14px;font-size:12px;color:#2d7070;margin-bottom:16px;line-height:1.6}
+.section-hd{font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.07em;margin:16px 0 6px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Load VolleyCo Transactions</h1>
+  <p>22 transactions from your Mercury account (March–April 2026). Review below, then tap to load.</p>
+
+  <div class="scholar-note">
+    VolleyScholar deposits included: <strong>$294.94</strong> (Mar 29) + <strong>$250.00</strong> (Apr 4) = <strong>$544.94</strong> will be added to the scholar fund balance.
+  </div>
+
+  <div class="section-hd">Revenue</div>
+  <div class="tx-list" id="rev-list"></div>
+  <div class="section-hd">Expenses & Transfers Out</div>
+  <div class="tx-list" id="exp-list"></div>
+
+  <button class="btn" id="load-btn" onclick="loadAll()">Load all 22 transactions</button>
+  <div id="status"></div>
+</div>
+
+<script>
+const SB_URL='https://sumnlntgnycrctiohkzm.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1bW5sbnRnbnljcmN0aW9oa3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NDI1MzcsImV4cCI6MjA5MDIxODUzN30.cgW_VlbCBB51i7ZcXmut9HZe5viaRNYVMwJ2dL3DS9g';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
+
+const TRANSACTIONS=[
+  // Revenue
+  {date:'2026-04-08',amount:37.34, paidHow:'Check',  category:'Deposit',                  notes:'ASPi Solutions I — MercuryACH'},
+  {date:'2026-04-01',amount:281.64,paidHow:'Venmo',  category:'Deposit',                  notes:'Venmo cashout'},
+  {date:'2026-03-30',amount:173.66,paidHow:'Venmo',  category:'Deposit',                  notes:'Venmo cashout'},
+  {date:'2026-03-27',amount:200.00,paidHow:'Venmo',  category:'Deposit',                  notes:'Venmo cashout'},
+  {date:'2026-03-26',amount:100.00,paidHow:'Venmo',  category:'Deposit',                  notes:'Venmo cashout'},
+  {date:'2026-03-24',amount:680.00,paidHow:'Venmo',  category:'Deposit',                  notes:'Venmo cashout'},
+  {date:'2026-03-10',amount:160.00,paidHow:'CashApp', category:'Deposit',                 notes:'Cash App — Bluejay Volleyball'},
+  {date:'2026-03-05',amount:150.00,paidHow:'Venmo',  category:'Deposit',                  notes:'Venmo cashout'},
+  // Scholar transfers (negative — internal)
+  {date:'2026-04-04',amount:-250.00,paidHow:'Internal Transfer',category:'Transfer',       notes:'Transfer to VolleyScholar (9535)'},
+  {date:'2026-03-29',amount:-294.94,paidHow:'Internal Transfer',category:'Transfer',       notes:'Transfer to VolleyScholar (9535)'},
+  // Tax savings
+  {date:'2026-03-30',amount:-148.00,paidHow:'Internal Transfer',category:'Transfer',       notes:'Transfer to Taxes (9220)'},
+  // Owner draw / transfer out
+  {date:'2026-03-30',amount:-344.09,paidHow:'BV > WF Transfer', category:'11 - Owner Draw',notes:'Transfer to Wells Fargo (2274)'},
+  // Payments out (Meagen, helpers, etc.)
+  {date:'2026-03-30',amount:-245.78,paidHow:'Venmo', category:'3 - Coach pay',             notes:'Venmo payment out'},
+  {date:'2026-03-30',amount:-30.00, paidHow:'Venmo', category:'3 - Coach pay',             notes:'Venmo payment out'},
+  {date:'2026-03-30',amount:-120.00,paidHow:'Venmo', category:'3 - Coach pay',             notes:'Venmo payment out'},
+  {date:'2026-03-30',amount:-180.00,paidHow:'Venmo', category:'3 - Coach pay',             notes:'Venmo payment out'},
+  {date:'2026-03-09',amount:-178.00,paidHow:'Venmo', category:'3 - Coach pay',             notes:'Venmo payment out'},
+  // Software subscriptions
+  {date:'2026-04-03',amount:-5.00,  paidHow:'VCo Card',category:'6 - Software & Subscriptions',notes:'Anthropic — Claude Pro'},
+  {date:'2026-03-24',amount:-20.00, paidHow:'VCo Card',category:'6 - Software & Subscriptions',notes:'Claude.ai subscription'},
+  // Supplies
+  {date:'2026-03-19',amount:-16.88, paidHow:'VCo Card',category:'13 - Office Supplies',   notes:'Dollar Tree — supplies'},
+  {date:'2026-03-06',amount:-17.09, paidHow:'VCo Card',category:'13 - Office Supplies',   notes:'Amazon — supplies'},
+  {date:'2026-03-05',amount:-30.52, paidHow:'VCo Card',category:'13 - Office Supplies',   notes:'Amazon — supplies'},
+];
+
+const SCHOLAR_DEPOSITS=[
+  {id:uid(),date:'2026-04-04',amount:250.00,  notes:'Transfer from Mercury (Apr 4)'},
+  {id:uid(),date:'2026-03-29',amount:294.94,  notes:'Transfer from Mercury (Mar 29)'},
+];
+
+// Render preview
+function fmt(v){return(v<0?'−':'')+'$'+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+const rev=TRANSACTIONS.filter(t=>t.amount>0);
+const exp=TRANSACTIONS.filter(t=>t.amount<0);
+document.getElementById('rev-list').innerHTML=rev.map(t=>`
+  <div class="tx"><div class="tx-left"><div class="tx-name">${t.notes}</div><div class="tx-meta">${t.date} · ${t.paidHow} · ${t.category}</div></div>
+  <div class="tx-amt pos">${fmt(t.amount)}</div></div>`).join('');
+document.getElementById('exp-list').innerHTML=exp.map(t=>`
+  <div class="tx"><div class="tx-left"><div class="tx-name">${t.notes}</div><div class="tx-meta">${t.date} · ${t.paidHow} · ${t.category}</div></div>
+  <div class="tx-amt neg">${fmt(t.amount)}</div></div>`).join('');
+
+async function loadAll(){
+  const btn=document.getElementById('load-btn');
+  const status=document.getElementById('status');
+  btn.disabled=true;btn.textContent='Loading…';status.className='';status.textContent='Saving to Supabase…';
+
+  try{
+    // Get existing data
+    const{data:rows}=await sb.from('finance_data').select('*');
+    const get=(key,def)=>{const r=rows&&rows.find(x=>x.key===key);return r?r.value:def;};
+
+    const existing=get('vc_transactions',[]);
+    const existingScholar=get('vc_scholar',[]);
+    const existingBal=parseFloat(get('vc_scholar_bal',0))||0;
+
+    // Add transactions with IDs
+    const newTxs=[...existing,...TRANSACTIONS.map(t=>({...t,id:uid()}))];
+
+    // Add scholar ledger entries
+    const newScholar=[...existingScholar,...SCHOLAR_DEPOSITS];
+    const newBal=existingBal+544.94;
+
+    // Also set account balance from CSV ending balance
+    const existingAccts=get('vc_accounts',[]);
+    let accts=existingAccts;
+    if(!accts.find(a=>a.name&&a.name.includes('Mercury'))){
+      accts=[...accts,{id:uid(),name:'Mercury Business Checking',type:'Business Checking',balance:313.14}];
+    }
+
+    // Also update tax saved
+    const existingTax=parseFloat(get('vc_tax_saved',0))||0;
+    const newTaxSaved=existingTax+148.00;
+
+    // Upsert all keys
+    const upserts=[
+      {key:'vc_transactions',value:newTxs,updated_at:new Date().toISOString()},
+      {key:'vc_scholar',     value:newScholar,updated_at:new Date().toISOString()},
+      {key:'vc_scholar_bal', value:newBal,updated_at:new Date().toISOString()},
+      {key:'vc_accounts',    value:accts,updated_at:new Date().toISOString()},
+      {key:'vc_tax_saved',   value:newTaxSaved,updated_at:new Date().toISOString()},
+    ];
+
+    for(const u of upserts){
+      const{error}=await sb.from('finance_data').upsert(u,{onConflict:'key'});
+      if(error)throw error;
+      // Also save to localStorage
+      localStorage.setItem('hf_'+u.key,JSON.stringify(u.value));
+    }
+
+    status.className='ok';
+    status.textContent='Done! Redirecting to the app…';
+    btn.textContent='Loaded!';
+    setTimeout(()=>window.location.href='/',1800);
+  }catch(e){
+    console.error(e);
+    status.className='err';
+    status.textContent='Error: '+e.message+'. Try again.';
+    btn.disabled=false;btn.textContent='Retry';
+  }
+}
+</script>
+</body>
+</html>
