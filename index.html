@@ -9,45 +9,56 @@
 <meta name="theme-color" content="#ffffff">
 <link rel="manifest" href="/manifest.json">
 <title>Home Finance</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-body{font-family:'Inter',sans-serif;background:#fff;color:#1a1a1a;font-size:15px;-webkit-font-smoothing:antialiased}
+body{font-family:'DM Sans',sans-serif;background:#f0ebe3;color:#1a1a1a;font-size:15px;-webkit-font-smoothing:antialiased}
 
 :root{
-  --lav-bg:#ede9f9;--lav-mid:#b8a9e8;--lav-dark:#5c4d8a;--lav-border:#ddd6f5;
-  --mint-bg:#e8f5f0;--mint-mid:#c8e8de;--mint-dark:#2d7a5f;
-  --rose-bg:#fdecea;--rose-mid:#f5c8c8;--rose-dark:#a33030;
-  --amber-bg:#fef6e4;--amber-mid:#f5e0b0;--amber-dark:#8a6020;
-  --blue-bg:#e4f0fb;--blue-mid:#b8d4f0;--blue-dark:#2a5fa8;
-  --sea-bg:#e8f5f5;--sea-mid:#b8e0e0;--sea-dark:#2d7070;
-  --border:#ececec;--border2:#e0e0e0;--bg2:#f8f7fb;--ink:#1a1a1a;--ink2:#888;--ink3:#c0bcd0;
+  /* Primary - bold lavender */
+  --lav-bg:#ede8ff;--lav-mid:#7c5cbf;--lav-dark:#4a2d8f;--lav-border:#c4b5f0;
+  /* Mint / success */
+  --mint-bg:#d4f5e5;--mint-mid:#34a86e;--mint-dark:#1d6b47;
+  /* Rose / danger */
+  --rose-bg:#ffe0e0;--rose-mid:#e85555;--rose-dark:#b02020;
+  /* Amber / warning */
+  --amber-bg:#fff0cc;--amber-mid:#e8a020;--amber-dark:#8a5a00;
+  /* Blue */
+  --blue-bg:#ddeeff;--blue-mid:#3a7fd4;--blue-dark:#1a4fa0;
+  /* Sea / teal */
+  --sea-bg:#d4f0f0;--sea-mid:#2a9090;--sea-dark:#1a5a5a;
+  /* Base */
+  --border:#2a2020;--border2:#c8c0b8;--bg2:#ede8df;--canvas:#f0ebe3;
+  --ink:#1a1a1a;--ink2:#6a6060;--ink3:#b0a898;
+  --card-bg:#faf8f4;
+  --shadow:2px 3px 0px #2a2020;
+  --shadow-sm:1px 2px 0px #2a2020;
 }
 
 /* ── LOADING ── */
-#loading{position:fixed;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;z-index:999}
-.spin{width:20px;height:20px;border:2px solid var(--lav-border);border-top-color:var(--lav-mid);border-radius:50%;animation:spin .7s linear infinite}
+#loading{position:fixed;inset:0;background:var(--canvas);display:flex;align-items:center;justify-content:center;z-index:999}
+.spin{width:22px;height:22px;border:3px solid var(--lav-border);border-top-color:var(--lav-mid);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ── HEADER ── */
-#hdr{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);z-index:100}
+#hdr{position:sticky;top:0;background:var(--canvas);border-bottom:2px solid var(--border);z-index:100}
 .hdr-top{display:flex;align-items:center;padding:13px 16px 10px;gap:10px}
 @media(min-width:640px){.hdr-top{padding:14px 24px 10px}}
-.brand{font-size:15px;font-weight:700;color:var(--lav-dark);letter-spacing:-.01em}
+.brand{font-size:16px;font-weight:800;color:var(--lav-dark);letter-spacing:-.02em}
 .hdr-right{display:flex;align-items:center;gap:8px;margin-left:auto}
-#sec-sel{font-family:'Inter',sans-serif;font-size:11px;font-weight:700;padding:5px 22px 5px 10px;border:1px solid var(--lav-border);border-radius:99px;background:var(--lav-bg);color:var(--lav-dark);cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%235c4d8a' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
-.sync{width:6px;height:6px;border-radius:50%;background:#b8e0b8;flex-shrink:0;transition:background .3s}
+#sec-sel{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;padding:6px 24px 6px 12px;border:2px solid var(--border);border-radius:99px;background:var(--lav-bg);color:var(--lav-dark);cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%234a2d8f' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;box-shadow:var(--shadow-sm)}
+.sync{width:7px;height:7px;border-radius:50%;background:#34a86e;border:1.5px solid var(--border);flex-shrink:0;transition:background .3s}
 .sync.saving{background:var(--amber-mid);animation:pulse 1s infinite}
 .sync.error{background:var(--rose-mid)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .tab-row{padding:0 16px 10px;display:none}
 .tab-row.show{display:block}
 @media(min-width:640px){.tab-row{padding:0 24px 10px}}
-.tab-bar{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tab-bar{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .tab-bar::-webkit-scrollbar{display:none}
-.tab{flex-shrink:0;padding:6px 14px;border-radius:99px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:#fff;color:var(--ink2);white-space:nowrap;transition:all .12s}
-.tab.on{background:var(--lav-mid);color:#fff;border-color:var(--lav-mid)}
+.tab{flex-shrink:0;padding:6px 14px;border-radius:99px;font-size:11px;font-weight:700;cursor:pointer;border:2px solid var(--border);background:var(--card-bg);color:var(--ink2);white-space:nowrap;transition:all .12s;box-shadow:var(--shadow-sm)}
+.tab.on{background:var(--lav-mid);color:#fff;border-color:var(--border);box-shadow:var(--shadow-sm)}
 @media(min-width:640px){.tab{font-size:12px;padding:6px 16px}}
 
 /* ── LAYOUT ── */
@@ -55,45 +66,45 @@ body{font-family:'Inter',sans-serif;background:#fff;color:#1a1a1a;font-size:15px
 @media(min-width:640px){#main{padding:24px 24px 80px}}
 
 /* ── PILLS ── */
-.pill{display:inline-flex;align-items:center;justify-content:center;padding:5px 13px;border-radius:99px;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;border:1px solid transparent;line-height:1.3;transition:opacity .12s,transform .08s}
-.pill:active{opacity:.7;transform:scale(.96)}
+.pill{display:inline-flex;align-items:center;justify-content:center;padding:6px 14px;border-radius:99px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;border:2px solid var(--border);line-height:1.3;transition:opacity .12s,transform .08s;box-shadow:var(--shadow-sm)}
+.pill:active{opacity:.8;transform:translateY(1px);box-shadow:none}
 .pill-primary{background:var(--lav-mid);color:#fff}
-.pill-soft{background:var(--lav-bg);color:var(--lav-dark);border-color:var(--lav-border)}
-.pill-ghost{background:#fff;color:var(--ink2);border-color:var(--border2)}
-.pill-success{background:var(--mint-bg);color:var(--mint-dark);border-color:var(--mint-mid)}
-.pill-danger{background:var(--rose-bg);color:var(--rose-dark);border-color:var(--rose-mid)}
-.pill-sea{background:var(--sea-bg);color:var(--sea-dark);border-color:var(--sea-mid)}
+.pill-soft{background:var(--lav-bg);color:var(--lav-dark)}
+.pill-ghost{background:var(--card-bg);color:var(--ink2)}
+.pill-success{background:var(--mint-bg);color:var(--mint-dark)}
+.pill-danger{background:var(--rose-bg);color:var(--rose-dark)}
+.pill-sea{background:var(--sea-bg);color:var(--sea-dark)}
 .pill-lg{padding:10px 22px;font-size:13px}
-.pill-full{width:100%;padding:11px;font-size:13px}
+.pill-full{width:100%;padding:12px;font-size:13px}
 .pill-sm{padding:4px 10px;font-size:10px}
 
 /* ── BACK ── */
-.back{display:inline-flex;align-items:center;gap:4px;padding:0;background:none;border:none;font-family:'Inter',sans-serif;font-size:12px;font-weight:500;color:var(--ink2);cursor:pointer;margin-bottom:16px}
+.back{display:inline-flex;align-items:center;gap:4px;padding:6px 12px 6px 10px;background:var(--card-bg);border:2px solid var(--border);border-radius:99px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;color:var(--ink2);cursor:pointer;margin-bottom:16px;box-shadow:var(--shadow-sm)}
 .back:hover{color:var(--lav-dark)}
 
 /* ── PAGE HEADER ── */
 .pg-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:10px}
-.pg-title{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.pg-title{font-size:22px;font-weight:800;letter-spacing:-.03em}
 
 /* ── SECTION LABEL ── */
-.sec-lbl{font-size:10px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.08em;margin:20px 0 8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sec-lbl{font-size:10px;font-weight:800;color:var(--ink2);text-transform:uppercase;letter-spacing:.1em;margin:20px 0 8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .sec-lbl:first-child{margin-top:0}
 
 /* ── QUICK ROW ── */
 .qrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
 
 /* ── HERO ── */
-.hero{border-radius:14px;padding:20px;margin-bottom:16px}
-.hero-lav{background:var(--lav-bg);border:1px solid var(--lav-border)}
-.hero-dark{background:#1e1a2e;color:#fff}
-.hero-sea{background:var(--sea-bg);border:1px solid var(--sea-mid)}
-.hero-mint{background:var(--mint-bg);border:1px solid var(--mint-mid)}
-.hero-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;opacity:.65}
+.hero{border-radius:16px;padding:20px;margin-bottom:16px;border:2px solid var(--border);box-shadow:var(--shadow)}
+.hero-lav{background:var(--lav-bg)}
+.hero-dark{background:#2a1a4e;color:#fff}
+.hero-sea{background:var(--sea-bg)}
+.hero-mint{background:var(--mint-bg)}
+.hero-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;opacity:.7}
 .hero-lav .hero-label{color:var(--lav-dark)}
 .hero-dark .hero-label{color:#fff}
 .hero-sea .hero-label{color:var(--sea-dark)}
 .hero-mint .hero-label{color:var(--mint-dark)}
-.hero-amt{font-size:38px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.hero-amt{font-size:38px;font-weight:800;letter-spacing:-.04em;line-height:1}
 .hero-lav .hero-amt{color:var(--lav-dark)}
 .hero-dark .hero-amt{color:#fff}
 .hero-sea .hero-amt{color:var(--sea-dark)}
@@ -101,12 +112,12 @@ body{font-family:'Inter',sans-serif;background:#fff;color:#1a1a1a;font-size:15px
 .hero-sub{font-size:12px;margin-top:5px;opacity:.6}
 .hero-lav .hero-sub{color:var(--lav-dark)}
 .hero-dark .hero-sub{color:#fff}
-.bar-wrap{height:4px;border-radius:3px;margin-top:14px;overflow:hidden;background:rgba(0,0,0,.08)}
+.bar-wrap{height:5px;border-radius:3px;margin-top:14px;overflow:hidden;background:rgba(0,0,0,.1)}
 .hero-dark .bar-wrap{background:rgba(255,255,255,.18)}
-.bar{height:4px;border-radius:3px;transition:width .4s}
+.bar{height:5px;border-radius:3px;transition:width .4s}
 .hero-lav .bar{background:var(--lav-mid)}
 .hero-dark .bar{background:#fff}
-.bar-labels{display:flex;justify-content:space-between;font-size:10px;margin-top:4px;opacity:.45}
+.bar-labels{display:flex;justify-content:space-between;font-size:10px;margin-top:4px;opacity:.5}
 .hero-lav .bar-labels{color:var(--lav-dark)}
 .hero-dark .bar-labels{color:#fff}
 
@@ -114,10 +125,10 @@ body{font-family:'Inter',sans-serif;background:#fff;color:#1a1a1a;font-size:15px
 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
 .tiles.t3{grid-template-columns:repeat(3,1fr)}
 @media(min-width:540px){.tiles{grid-template-columns:repeat(3,1fr);gap:10px}}
-.tile{background:var(--bg2);border-radius:10px;padding:14px;border:1px solid var(--lav-border)}
+.tile{background:var(--card-bg);border-radius:12px;padding:14px;border:2px solid var(--border);box-shadow:var(--shadow-sm)}
 .tile.wide{grid-column:1/-1}
-.tile-label{font-size:10px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
-.tile-val{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.tile-label{font-size:10px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.tile-val{font-size:22px;font-weight:800;letter-spacing:-.03em}
 .tile-val.big{font-size:28px}
 .c-lav{color:var(--lav-dark)}.c-mint{color:var(--mint-dark)}.c-rose{color:var(--rose-dark)}
 .c-amber{color:var(--amber-dark)}.c-blue{color:var(--blue-dark)}.c-sea{color:var(--sea-dark)}
@@ -125,30 +136,30 @@ body{font-family:'Inter',sans-serif;background:#fff;color:#1a1a1a;font-size:15px
 /* ── NAV CARDS ── */
 .nav-cards{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
 @media(min-width:540px){.nav-cards{grid-template-columns:repeat(3,1fr)}}
-.nav-card{background:#fff;border:1.5px solid var(--border);border-radius:13px;padding:15px 14px 13px;cursor:pointer;text-align:left;font-family:'Inter',sans-serif;transition:border-color .12s,box-shadow .12s;min-height:95px;display:flex;flex-direction:column;justify-content:space-between}
-.nav-card:hover{border-color:var(--lav-mid);box-shadow:0 2px 12px rgba(184,169,232,.15)}
-.nav-card:active{transform:scale(.97)}
-.nc-label{font-size:12px;font-weight:600;color:var(--ink)}
+.nav-card{background:var(--card-bg);border:2px solid var(--border);border-radius:14px;padding:15px 14px 13px;cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;transition:transform .1s,box-shadow .1s;min-height:95px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--shadow)}
+.nav-card:hover{transform:translateY(-1px);box-shadow:3px 4px 0px var(--border)}
+.nav-card:active{transform:translateY(1px);box-shadow:none}
+.nc-label{font-size:12px;font-weight:700;color:var(--ink)}
 .nc-sub{font-size:11px;color:var(--ink3);margin-top:3px}
-.nc-val{font-size:18px;font-weight:700;margin-top:8px}
-.nc-wide{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:space-between;min-height:auto;padding:16px 18px;background:var(--lav-bg);border-color:var(--lav-border)}
+.nc-val{font-size:18px;font-weight:800;margin-top:8px;letter-spacing:-.02em}
+.nc-wide{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:space-between;min-height:auto;padding:16px 18px;background:var(--lav-bg)}
 .nc-wide .nc-label{color:var(--lav-dark)}
 .nc-wide .nc-sub{color:var(--lav-mid)}
 .nc-wide .nc-val{margin-top:0;font-size:22px}
 
 /* ── CARD ── */
-.card{border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px}
-.card-hd{padding:10px 14px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.07em;display:flex;align-items:center;justify-content:space-between;background:var(--bg2)}
-.card-ft{padding:10px 14px;border-top:1px solid var(--border);background:var(--bg2)}
+.card{border:2px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow);background:var(--card-bg)}
+.card-hd{padding:10px 14px;border-bottom:2px solid var(--border);font-size:10px;font-weight:800;color:var(--ink2);text-transform:uppercase;letter-spacing:.08em;display:flex;align-items:center;justify-content:space-between;background:var(--bg2)}
+.card-ft{padding:10px 14px;border-top:2px solid var(--border);background:var(--bg2)}
 
 /* ── ROW ── */
-.row{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-bottom:1px solid #faf9fe}
+.row{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-bottom:1.5px solid var(--bg2)}
 .row:last-child{border-bottom:none}
 .row.center{align-items:center}
-.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;border:1.5px solid var(--border)}
 .dot.mint{background:var(--mint-mid)}.dot.rose{background:var(--rose-mid)}.dot.amber{background:var(--amber-mid)}.dot.lav{background:var(--lav-mid)}.dot.gray{background:var(--ink3)}
 .row-main{flex:1;min-width:0}
-.row-name{font-size:13px;font-weight:500}
+.row-name{font-size:13px;font-weight:600}
 .row-sub{font-size:11px;color:var(--ink2);margin-top:2px}
 .row-sub.urgent{color:var(--rose-dark)}.row-sub.soon{color:var(--amber-dark)}
 .row-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
@@ -157,58 +168,58 @@ body{font-family:'Inter',sans-serif;background:#fff;color:#1a1a1a;font-size:15px
 .rpills{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
 
 /* ── BOX ── */
-.box{border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px}
-.box-lav{background:var(--lav-bg);border-color:var(--lav-border)}
-.box-mint{background:var(--mint-bg);border-color:var(--mint-mid)}
-.box-amber{background:var(--amber-bg);border-color:var(--amber-mid)}
-.box-sea{background:var(--sea-bg);border-color:var(--sea-mid)}
-.box-rose{background:var(--rose-bg);border-color:var(--rose-mid)}
+.box{border:2px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;background:var(--card-bg);box-shadow:var(--shadow-sm)}
+.box-lav{background:var(--lav-bg)}
+.box-mint{background:var(--mint-bg)}
+.box-amber{background:var(--amber-bg)}
+.box-sea{background:var(--sea-bg)}
+.box-rose{background:var(--rose-bg)}
 
 /* ── ALERT ── */
-.alert{padding:11px 14px;border-radius:10px;margin-bottom:12px;font-size:12px;font-weight:500;cursor:pointer}
-.alert.rose{background:var(--rose-bg);color:var(--rose-dark);border:1px solid var(--rose-mid)}
-.alert.amber{background:var(--amber-bg);color:var(--amber-dark);border:1px solid var(--amber-mid)}
+.alert{padding:12px 14px;border-radius:12px;margin-bottom:12px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid var(--border);box-shadow:var(--shadow-sm)}
+.alert.rose{background:var(--rose-bg);color:var(--rose-dark)}
+.alert.amber{background:var(--amber-bg);color:var(--amber-dark)}
 
 /* ── BADGE ── */
-.badge{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;background:var(--lav-bg);color:var(--lav-dark);border-radius:99px;border:1px solid var(--lav-border)}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;background:var(--lav-bg);color:var(--lav-dark);border-radius:99px;border:1.5px solid var(--border)}
 
 /* ── PROGRESS ── */
-.prog-wrap{background:var(--lav-border);border-radius:3px;height:4px;margin-top:8px;overflow:hidden}
-.prog-bar{height:4px;border-radius:3px;background:var(--mint-dark);transition:width .3s}
+.prog-wrap{background:var(--border2);border-radius:3px;height:5px;margin-top:8px;overflow:hidden;border:1px solid var(--border)}
+.prog-bar{height:5px;border-radius:3px;background:var(--mint-dark);transition:width .3s}
 
 /* ── EMPTY ── */
 .empty{text-align:center;padding:40px 20px;color:var(--ink2);font-size:13px;line-height:1.8}
-.empty strong{color:var(--ink);font-weight:600}
+.empty strong{color:var(--ink);font-weight:700}
 
 /* ── DIVIDER ── */
-.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.divider{border:none;border-top:2px solid var(--border2);margin:16px 0}
 
 /* ── SHEET ── */
-#overlay{position:fixed;inset:0;background:rgba(30,26,46,.4);z-index:200;display:none;backdrop-filter:blur(3px)}
+#overlay{position:fixed;inset:0;background:rgba(26,16,40,.5);z-index:200;display:none;backdrop-filter:blur(4px)}
 #overlay.open{display:block}
-#sheet{position:fixed;bottom:0;left:0;right:0;max-width:500px;margin:0 auto;background:#fff;border-radius:20px 20px 0 0;z-index:201;transform:translateY(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);max-height:90vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,20px)}
+#sheet{position:fixed;bottom:0;left:0;right:0;max-width:500px;margin:0 auto;background:var(--canvas);border-radius:22px 22px 0 0;border:2px solid var(--border);border-bottom:none;z-index:201;transform:translateY(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);max-height:90vh;overflow-y:auto;padding-bottom:env(safe-area-inset-bottom,20px)}
 #sheet.open{transform:translateY(0)}
-.sheet-bar{width:36px;height:3px;background:var(--lav-border);border-radius:2px;margin:12px auto 4px}
+.sheet-bar{width:40px;height:4px;background:var(--border2);border-radius:2px;margin:12px auto 4px}
 .sheet-body{padding:8px 20px 20px}
-.sheet-title{font-size:18px;font-weight:700;margin-bottom:18px;color:var(--lav-dark)}
+.sheet-title{font-size:18px;font-weight:800;margin-bottom:18px;color:var(--lav-dark);letter-spacing:-.02em}
 
 /* ── FORMS ── */
 .field{display:flex;flex-direction:column;gap:5px;margin-bottom:13px}
-.field label{font-size:10px;font-weight:700;color:var(--lav-dark);text-transform:uppercase;letter-spacing:.07em}
-.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1.5px solid var(--lav-border);border-radius:9px;font-family:'Inter',sans-serif;font-size:16px;color:var(--ink);background:#fff;appearance:none;-webkit-appearance:none}
+.field label{font-size:10px;font-weight:800;color:var(--lav-dark);text-transform:uppercase;letter-spacing:.08em}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:2px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:16px;color:var(--ink);background:var(--card-bg);appearance:none;-webkit-appearance:none}
 .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--lav-mid);background:var(--lav-bg)}
-.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%235c4d8a' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%234a2d8f' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
 .field textarea{resize:vertical;min-height:65px;font-size:15px}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:380px){.field-row{grid-template-columns:1fr}}
-.field-check{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink);margin-bottom:13px;cursor:pointer}
+.field-check{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink);margin-bottom:13px;cursor:pointer;font-weight:600}
 .field-check input{width:18px;height:18px;flex-shrink:0;accent-color:var(--lav-mid)}
 .form-btns{display:flex;gap:8px;margin-top:16px}
-.form-btns .pill{flex:1;padding:11px;font-size:13px}
+.form-btns .pill{flex:1;padding:12px;font-size:13px}
 
 /* ── NET WORTH STRIP ── */
-.nw-strip{border:1.5px solid var(--lav-border);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;background:var(--lav-bg)}
-.nw-label{font-size:11px;font-weight:700;color:var(--lav-dark);text-transform:uppercase;letter-spacing:.06em}
+.nw-strip{border:2px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;background:var(--lav-bg);box-shadow:var(--shadow)}
+.nw-label{font-size:11px;font-weight:800;color:var(--lav-dark);text-transform:uppercase;letter-spacing:.07em}
 .nw-sub{font-size:11px;color:var(--lav-mid);margin-top:2px}
 </style>
 </head>
@@ -218,7 +229,7 @@ body{font-family:'Inter',sans-serif;background:#fff;color:#1a1a1a;font-size:15px
 
 <div id="hdr" style="display:none">
   <div class="hdr-top">
-    <div class="brand">✦ Home Finance</div>
+    <div class="brand">✦ finances</div>
     <div class="hdr-right">
       <select id="sec-sel" onchange="switchSec(this.value)">
         <option value="personal">Personal</option>
@@ -249,7 +260,7 @@ let sb=null;try{sb=supabase.createClient(SB_URL,SB_KEY);}catch(e){}
 // ─────────────────────────────────────────────
 let D={
   personal:{accounts:[],bills:[],income:[],debts:[],payPeriod:{}},
-  volleyco:{accounts:[],transactions:[],scholarLedger:[],scholarBalance:0,taxSaved:0}
+  volleyco:{accounts:[],transactions:[],scholarLedger:[],scholarBalance:0,taxSaved:0,vsEvents:[],vsConfig:null}
 };
 const KEYS={
   p_accounts:['personal','accounts'],p_bills:['personal','bills'],
@@ -257,7 +268,9 @@ const KEYS={
   p_payperiod:['personal','payPeriod'],
   vc_accounts:['volleyco','accounts'],vc_transactions:['volleyco','transactions'],
   vc_scholar:['volleyco','scholarLedger'],vc_scholar_bal:['volleyco','scholarBalance'],
-  vc_tax_saved:['volleyco','taxSaved']
+  vc_tax_saved:['volleyco','taxSaved'],
+  vc_vs_events:['volleyco','vsEvents'],
+  vc_vs_config:['volleyco','vsConfig']
 };
 function localLoad(){Object.keys(KEYS).forEach(k=>{const v=localStorage.getItem('hf_'+k);if(v)try{D[KEYS[k][0]][KEYS[k][1]]=JSON.parse(v);}catch(e){}});}
 async function remoteLoad(){
@@ -406,6 +419,7 @@ function renderHome(){
   if(p.debts.length)h+=`<button class="pill pill-ghost pill-full" style="margin-top:8px" onclick="go('debt-plan')">View debt payoff plan →</button>`;
   return h;
 }
+
 
 // ─────────────────────────────────────────────
 // PAY PERIOD
@@ -864,6 +878,7 @@ function renderVCOverview(){
     <div class="tile"><div class="tile-label">Net this month</div><div class="tile-val ${moNet>=0?'c-mint':'c-rose'}">${money(moNet)}</div></div>
     <div class="tile"><div class="tile-label">Est. taxes (25%)</div><div class="tile-val c-amber">${money(taxEst)}</div></div>
     <div class="tile"><div class="tile-label">VolleyScholar</div><div class="tile-val c-sea">${money(scholar)}</div></div>
+    <div class="tile"><div class="tile-label">VS Events</div><div class="tile-val c-lav">${(D.volleyco.vsEvents||[]).length}</div></div>
   </div>`;
 
   h+=`<div class="qrow">
@@ -1000,21 +1015,48 @@ function renderTaxes(){
 // ─────────────────────────────────────────────
 // VOLLEYSERIES CALC
 // ─────────────────────────────────────────────
-function getVSCfg(){const s=localStorage.getItem('vs_config');if(s)try{return JSON.parse(s);}catch(e){}return{splits:[{label:'VolleyScholar',pct:30},{label:'VolleyCo',pct:10},{label:'Rian',pct:35},{label:'Meagen',pct:18},{label:'Joey',pct:7}]};}
-function saveVSCfg(splits){localStorage.setItem('vs_config',JSON.stringify({splits}));}
+function getVSCfg(){
+  if(D.volleyco.vsConfig)return JSON.parse(JSON.stringify(D.volleyco.vsConfig));
+  const s=localStorage.getItem('vs_config');
+  if(s)try{return JSON.parse(s);}catch(e){}
+  return{splits:[{label:'VolleyScholar',pct:30},{label:'VolleyCo',pct:10},{label:'Rian',pct:35},{label:'Meagen',pct:18},{label:'Joey',pct:7}]};
+}
+function saveVSCfg(splits){
+  const cfg={splits};
+  D.volleyco.vsConfig=cfg;
+  localStorage.setItem('vs_config',JSON.stringify(cfg));
+  save('vc_vs_config');
+}
 
 function renderVSCalc(){
   const cfg=getVSCfg();
   const total=cfg.splits.reduce((s,x)=>s+(parseFloat(x.pct)||0),0);
   const ok=Math.abs(total-100)<0.01;
+  const events=[...(D.volleyco.vsEvents||[])].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const totalRevAllEvents=events.reduce((s,e)=>s+n(e.entryFees),0);
+  const totalProfitAllEvents=events.reduce((s,e)=>s+n(e.profit),0);
+
   let h=`<div class="pg-hd"><div class="pg-title">VolleySeries</div></div>`;
+
+  // Event history summary tiles
+  if(events.length){
+    h+=`<div class="tiles" style="margin-bottom:14px">
+      <div class="tile"><div class="tile-label">Events logged</div><div class="tile-val c-lav">${events.length}</div></div>
+      <div class="tile"><div class="tile-label">Total revenue</div><div class="tile-val c-mint">${money(totalRevAllEvents)}</div></div>
+      <div class="tile wide"><div class="tile-label">Total profit</div><div class="tile-val c-mint">${money(totalProfitAllEvents)}</div></div>
+    </div>`;
+  }
+
   h+=`<div class="sec-lbl">Event calculator</div>
   <div class="box" style="margin-bottom:14px">
     <div class="field-row" style="margin-bottom:12px">
       <div class="field" style="margin:0"><label>Entry fees collected</label><input type="number" id="vs-rev" step="0.01" inputmode="decimal" placeholder="0.00" oninput="calcVS()"></div>
       <div class="field" style="margin:0"><label>Event costs</label><input type="number" id="vs-cost" step="0.01" inputmode="decimal" placeholder="0.00" oninput="calcVS()"></div>
     </div>
-    <div class="field"><label>Winner payouts</label><input type="number" id="vs-pay" step="0.01" inputmode="decimal" placeholder="0.00" oninput="calcVS()"></div>
+    <div class="field-row" style="margin-bottom:0">
+      <div class="field" style="margin:0"><label>Winner payouts</label><input type="number" id="vs-pay" step="0.01" inputmode="decimal" placeholder="0.00" oninput="calcVS()"></div>
+      <div class="field" style="margin:0"><label># of Teams</label><input type="number" id="vs-teams" inputmode="numeric" placeholder="e.g. 15" oninput="calcVS()"></div>
+    </div>
     <div id="vs-results"></div>
   </div>`;
 
@@ -1024,8 +1066,8 @@ function renderVSCalc(){
     <div id="vs-splits">`;
   cfg.splits.forEach((s,i)=>{
     h+=`<div style="display:flex;gap:7px;align-items:center;margin-bottom:8px" id="vsr-${i}">
-      <input type="text" value="${esc(s.label)}" id="vsl-${i}" placeholder="Label" style="flex:2;padding:8px 10px;border:1.5px solid var(--lav-border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--lav-bg)">
-      <input type="number" value="${s.pct}" id="vsp-${i}" min="0" max="100" step="0.1" style="flex:1;padding:8px 10px;border:1.5px solid var(--lav-border);border-radius:8px;font-size:14px;font-family:inherit;text-align:right;background:var(--lav-bg)">
+      <input type="text" value="${esc(s.label)}" id="vsl-${i}" placeholder="Label" style="flex:2;padding:8px 10px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:var(--lav-bg)">
+      <input type="number" value="${s.pct}" id="vsp-${i}" min="0" max="100" step="0.1" style="flex:1;padding:8px 10px;border:2px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;text-align:right;background:var(--lav-bg)">
       <span style="font-size:12px;color:var(--ink2)">%</span>
       <button class="pill pill-danger pill-sm" onclick="removeVSSplit(${i})">✕</button>
     </div>`;
@@ -1036,25 +1078,110 @@ function renderVSCalc(){
       <div class="rpills"><button class="pill pill-ghost" onclick="addVSSplit()">+ Add row</button><button class="pill pill-primary" onclick="saveVSSplits()">Save splits</button></div>
     </div>
   </div>`;
+
+  // Event history
+  if(events.length){
+    h+=`<div class="sec-lbl">Event history</div>`;
+    events.forEach(e=>{
+      h+=`<div class="box" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px">
+          <div>
+            <div style="font-size:15px;font-weight:800">${esc(e.name||'VolleySeries Event')}</div>
+            <div style="font-size:11px;color:var(--ink2);margin-top:2px">${e.date||''} · ${e.teams||'?'} teams</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:18px;font-weight:800;color:var(--mint-dark)">${money(e.profit)}</div>
+            <div style="font-size:10px;color:var(--ink2);margin-top:1px">profit</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
+          <div style="background:var(--mint-bg);border:1.5px solid var(--border);border-radius:8px;padding:8px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mint-dark);margin-bottom:2px">Entry Fees</div><div style="font-size:13px;font-weight:700;color:var(--mint-dark)">${money(e.entryFees)}</div></div>
+          <div style="background:var(--rose-bg);border:1.5px solid var(--border);border-radius:8px;padding:8px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--rose-dark);margin-bottom:2px">Costs</div><div style="font-size:13px;font-weight:700;color:var(--rose-dark)">${money(n(e.costs)+n(e.payouts))}</div></div>
+          <div style="background:var(--lav-bg);border:1.5px solid var(--border);border-radius:8px;padding:8px;text-align:center"><div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--lav-dark);margin-bottom:2px">Payouts</div><div style="font-size:13px;font-weight:700;color:var(--lav-dark)">${money(e.payouts)}</div></div>
+        </div>
+        ${(e.splits||[]).length?`<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">${(e.splits||[]).map(s=>`<div style="background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;padding:5px 10px;font-size:11px"><span style="font-weight:600">${esc(s.label)}</span> <span style="color:var(--ink2)">${s.pct}%</span> <span style="font-weight:700;color:var(--lav-dark)">${money(s.amt)}</span></div>`).join('')}</div>`:''}
+        <div class="rpills"><button class="pill pill-danger pill-sm" onclick="deleteVSEvent('${e.id}')">Delete event</button></div>
+      </div>`;
+    });
+  }
   return h;
 }
 function calcVS(){
   const rev=parseFloat(document.getElementById('vs-rev').value)||0;
   const cost=parseFloat(document.getElementById('vs-cost').value)||0;
   const pay=parseFloat(document.getElementById('vs-pay').value)||0;
+  const teams=parseInt(document.getElementById('vs-teams').value)||0;
   const profit=Math.max(0,rev-cost-pay);
   const el=document.getElementById('vs-results');if(!el||!rev){if(el)el.innerHTML='';return;}
   const cfg=getVSCfg();
-  let h=`<div style="background:var(--lav-bg);border-radius:10px;padding:14px;margin-top:4px;border:1px solid var(--lav-border)">
-    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:7px;padding-bottom:7px;border-bottom:1px solid var(--lav-border)"><span style="color:var(--ink2)">Revenue</span><span style="font-weight:600">${money(rev)}</span></div>
-    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:7px"><span style="color:var(--ink2)">Costs + payouts</span><span style="font-weight:600;color:var(--rose-dark)">−${money(cost+pay)}</span></div>
-    <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;padding-top:7px;border-top:1px solid var(--lav-border);margin-bottom:12px"><span>Net profit</span><span style="color:${profit>0?'var(--mint-dark)':'var(--rose-dark)'}">${money(profit)}</span></div>`;
+  let h=`<div style="background:var(--lav-bg);border-radius:12px;padding:14px;margin-top:14px;border:2px solid var(--border)">
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:7px;padding-bottom:7px;border-bottom:1.5px solid var(--border2)"><span style="color:var(--ink2);font-weight:600">Entry fees</span><span style="font-weight:700">${money(rev)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:7px"><span style="color:var(--ink2);font-weight:600">Costs + payouts</span><span style="font-weight:700;color:var(--rose-dark)">−${money(cost+pay)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:800;padding-top:7px;border-top:1.5px solid var(--border2);margin-bottom:14px;letter-spacing:-.01em"><span>Net profit</span><span style="color:${profit>0?'var(--mint-dark)':'var(--rose-dark)'}">${money(profit)}</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">`;
   cfg.splits.forEach(s=>{
     const amt=profit*(parseFloat(s.pct)||0)/100;
-    h+=`<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:var(--ink2)">${esc(s.label)} <span style="color:var(--ink3)">(${s.pct}%)</span></span><span style="font-weight:700">${money(amt)}</span></div>`;
+    h+=`<div style="background:var(--card-bg);border:1.5px solid var(--border);border-radius:8px;padding:9px 11px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;color:var(--ink2);font-weight:600">${esc(s.label)} <span style="color:var(--ink3)">${s.pct}%</span></span><span style="font-size:13px;font-weight:800;color:var(--lav-dark)">${money(amt)}</span></div>`;
   });
-  h+=`<button class="pill pill-primary pill-full" style="margin-top:12px" onclick="logVSEvent(${rev},${cost},${pay},${profit})">Log this event as transactions</button></div>`;
+  h+=`</div>
+    <div class="field" style="margin-bottom:10px"><label>Event name</label><input type="text" id="vs-name" placeholder="e.g. Feb 22 Hump Day" style="padding:9px 12px;border:2px solid var(--border);border-radius:9px;font-size:15px;font-family:inherit;width:100%;background:var(--card-bg)"></div>
+    <div class="field" style="margin-bottom:12px"><label>Event date</label><input type="date" id="vs-date" value="${today()}" style="padding:9px 12px;border:2px solid var(--border);border-radius:9px;font-size:15px;font-family:inherit;width:100%;background:var(--card-bg)"></div>
+    <button class="pill pill-primary pill-full" style="font-size:13px" onclick="logVSEvent(${rev},${cost},${pay},${profit},${teams})">✓ Log this event</button>
+  </div>`;
   el.innerHTML=h;
+}
+function logVSEvent(rev,cost,pay,profit,teams){
+  const cfg=getVSCfg();
+  const nameEl=document.getElementById('vs-name');
+  const dateEl=document.getElementById('vs-date');
+  const name=(nameEl&&nameEl.value.trim())||'VolleySeries Event';
+  const dt=(dateEl&&dateEl.value)||today();
+
+  if(!D.volleyco.transactions)D.volleyco.transactions=[];
+  if(!D.volleyco.vsEvents)D.volleyco.vsEvents=[];
+
+  // Build split breakdown for the record
+  const splitRecord=cfg.splits.map(s=>({
+    label:s.label,pct:s.pct,amt:profit*(parseFloat(s.pct)||0)/100
+  }));
+
+  // Save the event record
+  D.volleyco.vsEvents.push({
+    id:uid(),date:dt,name,teams:teams||0,
+    entryFees:rev,costs:cost,payouts:pay,profit,
+    splits:splitRecord
+  });
+  save('vc_vs_events');
+
+  // Log entry fees as transaction
+  D.volleyco.transactions.push({id:uid(),date:dt,amount:rev,paidHow:'',category:'Deposit',notes:name+' — entry fees'});
+  // Log costs
+  if(cost>0)D.volleyco.transactions.push({id:uid(),date:dt,amount:-cost,paidHow:'VCo Card',category:'Event Costs',notes:name+' — event costs'});
+  // Log winner payouts
+  if(pay>0)D.volleyco.transactions.push({id:uid(),date:dt,amount:-pay,paidHow:'Venmo',category:'Winner Payouts',notes:name+' — winner payouts'});
+
+  // Auto-log VolleyScholar split
+  const sch=cfg.splits.find(s=>s.label.toLowerCase().includes('scholar'));
+  if(sch){
+    const amt=profit*(parseFloat(sch.pct)||0)/100;
+    if(amt>0){
+      if(!D.volleyco.scholarLedger)D.volleyco.scholarLedger=[];
+      D.volleyco.scholarLedger.push({id:uid(),date:dt,amount:amt,notes:name+' — VolleySeries split'});
+      D.volleyco.scholarBalance=n(D.volleyco.scholarBalance)+amt;
+      save('vc_scholar');save('vc_scholar_bal');
+      // Also log as transaction
+      D.volleyco.transactions.push({id:uid(),date:dt,amount:-amt,paidHow:'Internal Transfer',category:'VolleyScholar Transfer',notes:name+' — VolleyScholar 30%'});
+    }
+  }
+  save('vc_transactions');
+  render();
+  // Small scroll to top to show the event was logged
+  document.getElementById('main').scrollTop=0;
+}
+function deleteVSEvent(id){
+  if(!confirm('Delete this event record? Transactions that were logged will remain.'))return;
+  D.volleyco.vsEvents=(D.volleyco.vsEvents||[]).filter(e=>e.id!==id);
+  save('vc_vs_events');render();
 }
 function saveVSSplits(){
   const splits=[];let total=0;
@@ -1076,27 +1203,13 @@ function removeVSSplit(i){
   cfg.splits.forEach((s,idx)=>{const l=document.getElementById('vsl-'+idx),p=document.getElementById('vsp-'+idx);if(l)s.label=l.value;if(p)s.pct=parseFloat(p.value)||0;});
   cfg.splits.splice(i,1);saveVSCfg(cfg.splits);render();
 }
-function logVSEvent(rev,cost,pay,profit){
-  const cfg=getVSCfg();if(!D.volleyco.transactions)D.volleyco.transactions=[];
-  const dt=today();
-  D.volleyco.transactions.push({id:uid(),date:dt,amount:rev,paidHow:'',category:'Deposit',notes:'VolleySeries — entry fees'});
-  if(cost>0)D.volleyco.transactions.push({id:uid(),date:dt,amount:-cost,paidHow:'',category:'7 - Event costs',notes:'VolleySeries — event costs'});
-  if(pay>0)D.volleyco.transactions.push({id:uid(),date:dt,amount:-pay,paidHow:'Venmo',category:'7 - Event costs',notes:'VolleySeries — winner payouts'});
-  const sch=cfg.splits.find(s=>s.label.toLowerCase().includes('scholar'));
-  if(sch){const amt=profit*(parseFloat(sch.pct)||0)/100;
-    if(amt>0){if(!D.volleyco.scholarLedger)D.volleyco.scholarLedger=[];
-      D.volleyco.scholarLedger.push({id:uid(),date:dt,amount:amt,notes:'VolleySeries — auto logged'});
-      D.volleyco.scholarBalance=n(D.volleyco.scholarBalance)+amt;save('vc_scholar');save('vc_scholar_bal');}
-  }
-  save('vc_transactions');alert('Event logged!');go('transactions');
-}
 
 // ─────────────────────────────────────────────
 // SHEET / FORMS
 // ─────────────────────────────────────────────
 const ACCT_TYPES=['Checking','Savings','Business Checking','Business Savings','Investment','Other'];
 const DEBT_TYPES=['Credit Card','Student Loan','Auto Loan','Personal Loan','Medical','Other'];
-const CAT_VC=['Deposit','Transfer','1 - Training equipment','2 - Gym rental','3 - Coach pay','4 - Apparel & Uniforms','5 - Marketing & Branding','6 - Software & Subscriptions','7 - Event costs','8 - Professional services','9 - Bank fees','10 - Coaching apparel','11 - Owner Draw','12 - Donation','13 - Office Supplies'];
+const CAT_VC=['Deposit','Winner Payouts','VolleyScholar Transfer','Internal Transfer','Event Costs','Training Equipment','Gym Rental','Coach Pay','Apparel & Uniforms','Marketing & Branding','Software & Subscriptions','Professional Services','Bank Fees','Coaching Apparel','Owner Draw','Donation','Office Supplies','Other'];
 const PAY_HOW=['Venmo','VCo Card','CashApp','AG WF','BV > WF Transfer','Internal Transfer','Check','Cash','Other'];
 
 function showSheet(title,body){
@@ -1204,7 +1317,8 @@ function toggleBillCommit(id,checked){const pp=getPP();if(checked){if(!pp.commit
 function saveDebt(){const name=fv('f-name').trim();if(!name)return alert('Enter a name.');const bal=n(fv('f-balance'));D.personal.debts.push({id:uid(),name,type:fv('f-type'),balance:bal,originalBalance:n(fv('f-orig'))||bal,rate:fv('f-rate'),minPayment:n(fv('f-min')),dueDay:fv('f-day')});save('p_debts');closeSheet();render();}
 function updateDebt(id){const d=D.personal.debts.find(x=>x.id===id);if(!d)return;d.name=fv('f-name').trim();d.type=fv('f-type');d.balance=n(fv('f-balance'));d.originalBalance=n(fv('f-orig'))||d.balance;d.rate=fv('f-rate');d.minPayment=n(fv('f-min'));d.dueDay=fv('f-day');save('p_debts');closeSheet();render();}
 function deleteDebt(id){if(!confirm('Delete this debt?'))return;D.personal.debts=D.personal.debts.filter(x=>x.id!==id);save('p_debts');render();}
-function makePayment(id){const d=D.personal.debts.find(x=>x.id===id);if(!d)return;const amt=parseFloat(prompt(`Payment amount for ${d.name}:`));if(!amt||isNaN(amt))return;d.balance=Math.max(0,n(d.balance)-amt);save('p_debts');render();}
+function makePayment(id){const d=D.personal.debts.find(x=>x.id===id);if(!d)return;showSheet('Make Payment',`<div style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--ink)">${esc(d.name)}<span style="font-size:12px;font-weight:500;color:var(--ink2);margin-left:8px">Balance: ${money(d.balance)}</span></div><div class="field"><label>Payment amount</label><input id="pay-amt" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div><div class="form-btns"><button class="pill pill-primary pill-full" onclick="submitPayment('${id}')">Apply payment</button></div>`);}
+function submitPayment(id){const d=D.personal.debts.find(x=>x.id===id);if(!d)return;const amt=parseFloat(document.getElementById('pay-amt').value);if(!amt||isNaN(amt))return alert('Enter an amount.');d.balance=Math.max(0,n(d.balance)-amt);save('p_debts');closeSheet();render();}
 
 function saveAccount(sec){const name=fv('f-name').trim();if(!name)return alert('Enter an account name.');if(!D[sec].accounts)D[sec].accounts=[];D[sec].accounts.push({id:uid(),name,type:fv('f-type'),balance:n(fv('f-balance'))});save(sec==='personal'?'p_accounts':'vc_accounts');closeSheet();render();}
 function updateAccount(id,sec){const a=(D[sec].accounts||[]).find(x=>x.id===id);if(!a)return;a.name=fv('f-name').trim();a.type=fv('f-type');a.balance=n(fv('f-balance'));save(sec==='personal'?'p_accounts':'vc_accounts');closeSheet();render();}
@@ -1218,10 +1332,32 @@ function saveTx(){const amt=n(fv('f-amount'));if(!amt)return alert('Enter an amo
 function updateTx(id){const t=(D.volleyco.transactions||[]).find(x=>x.id===id);if(!t)return;t.date=fv('f-date');t.amount=n(fv('f-amount'));t.paidHow=fv('f-how');t.category=fv('f-cat');t.notes=fv('f-notes').trim();save('vc_transactions');closeSheet();render();}
 function deleteTx(id){D.volleyco.transactions=(D.volleyco.transactions||[]).filter(x=>x.id!==id);save('vc_transactions');render();}
 
-function scholarEntry(dir){const amt=parseFloat(prompt(dir>0?'Deposit amount:':'Disbursement amount:'));if(!amt||isNaN(amt))return;const notes=prompt('Notes:')||(dir>0?'Deposit':'Disbursement');if(!D.volleyco.scholarLedger)D.volleyco.scholarLedger=[];D.volleyco.scholarLedger.push({id:uid(),date:today(),amount:dir*amt,notes});D.volleyco.scholarBalance=n(D.volleyco.scholarBalance)+dir*amt;save('vc_scholar');save('vc_scholar_bal');render();}
+function scholarEntry(dir){
+  showSheet(dir>0?'Add Deposit':'Record Disbursement',`
+    <div class="field"><label>Amount</label><input id="sch-amt" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+    <div class="field"><label>Date</label><input id="sch-date" type="date" value="${today()}"></div>
+    <div class="field"><label>Notes</label><input id="sch-notes" type="text" placeholder="${dir>0?'e.g. VolleySeries Feb 22':'e.g. Scholarship award'}"></div>
+    <div class="form-btns"><button class="pill pill-primary pill-full" onclick="submitScholarEntry(${dir})">Save</button></div>`);
+}
+function submitScholarEntry(dir){
+  const amt=parseFloat(document.getElementById('sch-amt').value);
+  if(!amt||isNaN(amt))return alert('Enter an amount.');
+  const notes=(document.getElementById('sch-notes').value||'').trim()||(dir>0?'Deposit':'Disbursement');
+  const dt=document.getElementById('sch-date').value||today();
+  if(!D.volleyco.scholarLedger)D.volleyco.scholarLedger=[];
+  D.volleyco.scholarLedger.push({id:uid(),date:dt,amount:dir*amt,notes});
+  D.volleyco.scholarBalance=n(D.volleyco.scholarBalance)+dir*amt;
+  save('vc_scholar');save('vc_scholar_bal');closeSheet();render();
+}
 function updateScholar(id){const l=(D.volleyco.scholarLedger||[]).find(x=>x.id===id);if(!l)return;const old=n(l.amount),nw=n(fv('f-amount'));l.date=fv('f-date');l.amount=nw;l.notes=fv('f-notes').trim();D.volleyco.scholarBalance=n(D.volleyco.scholarBalance)-old+nw;save('vc_scholar');save('vc_scholar_bal');closeSheet();render();}
 function deleteScholar(id){const l=(D.volleyco.scholarLedger||[]).find(x=>x.id===id);if(!l)return;D.volleyco.scholarBalance=n(D.volleyco.scholarBalance)-n(l.amount);D.volleyco.scholarLedger=D.volleyco.scholarLedger.filter(x=>x.id!==id);save('vc_scholar');save('vc_scholar_bal');render();}
-function updateTaxSaved(){const v=parseFloat(prompt('Manual amount set aside for taxes:',D.volleyco.taxSaved||0));if(isNaN(v))return;D.volleyco.taxSaved=v;save('vc_tax_saved');render();}
+function updateTaxSaved(){
+  showSheet('Update Tax Set Aside',`
+    <div style="font-size:12px;color:var(--ink2);margin-bottom:16px;line-height:1.6">This is cash saved outside of transactions — e.g. money moved to a separate account manually.</div>
+    <div class="field"><label>Amount set aside</label><input id="tax-amt" type="number" step="0.01" inputmode="decimal" placeholder="0.00" value="${D.volleyco.taxSaved||0}"></div>
+    <div class="form-btns"><button class="pill pill-primary pill-full" onclick="submitTaxSaved()">Save</button></div>`);
+}
+function submitTaxSaved(){const v=parseFloat(document.getElementById('tax-amt').value);if(isNaN(v))return alert('Enter a valid amount.');D.volleyco.taxSaved=v;save('vc_tax_saved');closeSheet();render();}
 
 // ─────────────────────────────────────────────
 // PAY PERIOD ACTIONS
