@@ -233,7 +233,7 @@ let sb=null;try{sb=supabase.createClient(SB_URL,SB_KEY);}catch(e){}
 // DATA
 // ─────────────────────────────────────────────
 let D={
-  personal:{accounts:[],bills:[],income:[],debts:[],payPeriod:{}},
+  personal:{accounts:[],bills:[],income:[],debts:[],payPeriod:{},ppHistory:[]},
   volleyco:{accounts:[],transactions:[],scholarLedger:[],taxSaved:0,vsEvents:[],vsConfig:null}
 };
 // NOTE: vc_scholar_bal removed — balance derived live from ledger
@@ -241,12 +241,16 @@ const KEYS={
   p_accounts:['personal','accounts'],p_bills:['personal','bills'],
   p_income:['personal','income'],p_debts:['personal','debts'],
   p_payperiod:['personal','payPeriod'],
+  p_pp_history:['personal','ppHistory'],
   vc_accounts:['volleyco','accounts'],vc_transactions:['volleyco','transactions'],
   vc_scholar:['volleyco','scholarLedger'],
   vc_tax_saved:['volleyco','taxSaved'],
   vc_vs_events:['volleyco','vsEvents'],
   vc_vs_config:['volleyco','vsConfig']
 };
+
+// In-memory UI state (resets on navigate)
+let _showDoneAllocs=false;
 function localLoad(){Object.keys(KEYS).forEach(k=>{const v=localStorage.getItem('hf_'+k);if(v)try{D[KEYS[k][0]][KEYS[k][1]]=JSON.parse(v);}catch(e){}});}
 async function remoteLoad(){
   if(!sb)return;
@@ -302,7 +306,7 @@ function closeSheet(){
 // ─────────────────────────────────────────────
 let NAV={sec:'personal',screen:'home'};
 function switchSec(sec){NAV.sec=sec;NAV.screen=sec==='personal'?'home':'overview';document.getElementById('sec-sel').value=sec;render();}
-function go(s){NAV.screen=s;render();}
+function go(s){NAV.screen=s;_showDoneAllocs=false;render();}
 function goHome(){go(NAV.sec==='personal'?'home':'overview');}
 function back(lbl){return`<button class="back" onclick="goHome()">← ${lbl||'Home'}</button>`;}
 function backTo(s,lbl){return`<button class="back" onclick="go('${s}')">← ${lbl}</button>`;}
@@ -603,31 +607,60 @@ function renderPayPeriod(){
   // Allocations
   const pending=allocs.filter(a=>!a.done);
   const done=allocs.filter(a=>a.done);
+  const doneAmt=done.reduce((s,a)=>s+n(a.amount),0);
   const pendingBadge=pendingCnt>0?`<span style="background:var(--amber-lt);color:var(--amber-dk);border:1px solid var(--amber-lt);padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">${pendingCnt} to do</span>`:'';
-  const doneBadge=doneCnt>0?`<span style="background:var(--mint-lt);color:var(--mint-dk);border:1px solid var(--mint-lt);padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">${doneCnt} done</span>`:'';
-  h+=`<div class="sec-lbl"><span style="display:flex;align-items:center;gap:6px">Allocations ${pendingBadge}${doneBadge}</span></div>`;
+  h+=`<div class="sec-lbl"><span style="display:flex;align-items:center;gap:6px">Allocations ${pendingBadge}</span></div>`;
   if(allocs.length){
     h+=`<div class="card">`;
-    [...pending,...done].forEach(a=>{
+    // Pending allocations always shown
+    pending.forEach(a=>{
       const acct=(D.personal.accounts||[]).find(x=>x.id===a.destination);
       const dest=a.destination==='cash'?'Cash':acct?esc(acct.name):'';
-      const isDone=!!a.done;
-      h+=`<div class="row center" style="opacity:${isDone?'.4':'1'}">
-        <input type="checkbox" ${isDone?'checked':''} onchange="toggleAllocDone('${a.id}',this.checked)"
+      h+=`<div class="row center">
+        <input type="checkbox" onchange="toggleAllocDone('${a.id}',this.checked)"
           style="width:17px;height:17px;flex-shrink:0;accent-color:var(--lav);cursor:pointer">
         <div class="row-main">
-          <div class="row-name" style="${isDone?'text-decoration:line-through':''}">${esc(a.label)}</div>
+          <div class="row-name">${esc(a.label)}</div>
           ${dest?`<div class="row-sub">${dest}</div>`:''}
         </div>
         <div class="row-right">
-          <div class="row-amt" style="color:${isDone?'var(--ink3)':'var(--ink)'}">${money(a.amount)}</div>
+          <div class="row-amt">${money(a.amount)}</div>
           <div class="rpills">
-            ${!isDone?`<button class="pill pill-ghost pill-sm" onclick="openAddAlloc('${a.id}')">Edit</button>`:''}
+            <button class="pill pill-ghost pill-sm" onclick="openAddAlloc('${a.id}')">Edit</button>
             <button class="pill pill-danger pill-sm" onclick="deleteAlloc('${a.id}')">✕</button>
           </div>
         </div>
       </div>`;
     });
+    // Done allocations — hidden by default, toggle to show
+    if(done.length){
+      if(pending.length){h+=`<div style="border-top:1px solid var(--border)"></div>`;}
+      h+=`<div class="row center" style="cursor:pointer;background:var(--bg)" onclick="_showDoneAllocs=!_showDoneAllocs;render()">
+        <div class="row-main" style="display:flex;align-items:center;gap:7px">
+          <span style="font-size:12px;font-weight:600;color:var(--ink2)">${_showDoneAllocs?'Hide':'Show'} completed (${done.length})</span>
+          <span style="font-size:11px;color:var(--ink3)">· ${money(doneAmt)}</span>
+        </div>
+        <div style="font-size:12px;color:var(--ink3)">${_showDoneAllocs?'▲':'▼'}</div>
+      </div>`;
+      if(_showDoneAllocs){
+        done.forEach(a=>{
+          const acct=(D.personal.accounts||[]).find(x=>x.id===a.destination);
+          const dest=a.destination==='cash'?'Cash':acct?esc(acct.name):'';
+          h+=`<div class="row center" style="opacity:.45;background:var(--bg)">
+            <input type="checkbox" checked onchange="toggleAllocDone('${a.id}',this.checked)"
+              style="width:17px;height:17px;flex-shrink:0;accent-color:var(--lav);cursor:pointer">
+            <div class="row-main">
+              <div class="row-name" style="text-decoration:line-through">${esc(a.label)}</div>
+              ${dest?`<div class="row-sub">${dest}</div>`:''}
+            </div>
+            <div class="row-right">
+              <div class="row-amt dim">${money(a.amount)}</div>
+              <button class="pill pill-danger pill-sm" onclick="deleteAlloc('${a.id}')">✕</button>
+            </div>
+          </div>`;
+        });
+      }
+    }
     h+=`</div>`;
   }else{
     h+=`<div class="box box-lav" style="text-align:center;padding:14px;font-size:12px;color:var(--lav-dk)">Tap <strong>+ Allocate</strong> to divide what's left — groceries, gas, savings, etc.</div>`;
@@ -678,11 +711,16 @@ function renderPayPeriod(){
       </div>`;
     });h+=`</div>`;
   }
+  // Past periods link
+  const history=D.personal.ppHistory||[];
+  if(history.length){
+    h+=`<div style="margin-top:20px;text-align:center">
+      <span style="font-size:12px;color:var(--ink3);cursor:pointer;font-weight:600" onclick="openPPHistory()">Past periods (${history.length}) →</span>
+    </div>`;
+  }
+
   return h;
 }
-
-// ─────────────────────────────────────────────
-// BILLS
 // ─────────────────────────────────────────────
 function renderBills(){
   const bills=D.personal.bills;
@@ -1555,7 +1593,90 @@ function saveAlloc(){const lbl=(document.getElementById('al-lbl').value||'').tri
 function updateAlloc(id){const lbl=(document.getElementById('al-lbl').value||'').trim();const amt=parseFloat(document.getElementById('al-amt').value);if(!lbl)return alert('Enter a label.');if(!amt)return alert('Enter an amount.');const pp=getPP();const a=pp.allocations.find(x=>x.id===id);if(!a)return;a.label=lbl;a.amount=amt;a.destination=document.getElementById('al-dest').value||'';savePP(pp);closeSheet();render();}
 function deleteAlloc(id){const pp=getPP();pp.allocations=pp.allocations.filter(x=>x.id!==id);savePP(pp);render();}
 function toggleAllocDone(id,done){const pp=getPP();const a=pp.allocations.find(x=>x.id===id);if(a){a.done=done;savePP(pp);render();}}
-function startNewPeriod(){if(!confirm('Start a new period? Income and allocations will be cleared. Payday advances 14 days.'))return;const pp=getPP();pp.nextPayday=ppAdvance(pp.nextPayday);pp.income=[];pp.committedBills=[];pp.allocations=[];savePP(pp);render();}
+function startNewPeriod(){
+  if(!confirm('Start a new period? Current income and allocations will be archived and cleared. Payday advances 14 days.'))return;
+  const pp=getPP();
+  // Archive current period before clearing
+  const archive={
+    id:uid(),
+    periodEnd:today(),
+    payday:pp.nextPayday,
+    income:[...(pp.income||[])],
+    allocations:[...(pp.allocations||[])],
+    committedBills:[...(pp.committedBills||[])]
+  };
+  if(!D.personal.ppHistory)D.personal.ppHistory=[];
+  D.personal.ppHistory.unshift(archive);
+  save('p_pp_history');
+  // Reset for new period
+  pp.nextPayday=ppAdvance(pp.nextPayday);
+  pp.income=[];pp.committedBills=[];pp.allocations=[];
+  savePP(pp);
+  _showDoneAllocs=false;
+  render();
+}
+
+function openPPHistory(){
+  const history=D.personal.ppHistory||[];
+  if(!history.length){showSheet('Past Periods','<div class="empty">No past periods yet.</div>');return;}
+  let expandedId=null;
+  function buildBody(eId){
+    let b='';
+    history.forEach(p=>{
+      const totalIn=(p.income||[]).reduce((s,i)=>s+n(i.amount),0);
+      const totalAlloc=(p.allocations||[]).reduce((s,a)=>s+n(a.amount),0);
+      const doneAlloc=(p.allocations||[]).filter(a=>a.done).reduce((s,a)=>s+n(a.amount),0);
+      const doneCount=(p.allocations||[]).filter(a=>a.done).length;
+      const totalCount=(p.allocations||[]).length;
+      const isExpanded=eId===p.id;
+      const label=p.payday?new Date(p.payday+'T00:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):`Period ending ${p.periodEnd||''}`;
+      b+=`<div style="border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;background:var(--card)">
+        <div style="padding:13px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="openPPHistory('${isExpanded?'':p.id}')">
+          <div>
+            <div style="font-size:13px;font-weight:700">${label}</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:2px">${totalCount} allocations · ${doneCount} done</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:14px;font-weight:700;color:var(--mint-dk)">${money(totalIn)}</div>
+            <div style="font-size:11px;color:var(--ink3)">in</div>
+          </div>
+        </div>`;
+      if(isExpanded){
+        b+=`<div style="border-top:1px solid var(--border);padding:10px 14px;background:var(--bg)">`;
+        // Income
+        if((p.income||[]).length){
+          b+=`<div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Income</div>`;
+          p.income.forEach(i=>{
+            b+=`<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--ink2)">${esc(i.label)}</span><span style="font-weight:700;color:var(--mint-dk)">+${money(i.amount)}</span></div>`;
+          });
+          b+=`<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;padding:6px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin:6px 0 12px"><span>Total in</span><span style="color:var(--mint-dk)">${money(totalIn)}</span></div>`;
+        }
+        // Allocations
+        if((p.allocations||[]).length){
+          b+=`<div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Allocations</div>`;
+          p.allocations.forEach(a=>{
+            const isDone=!!a.done;
+            b+=`<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;opacity:${isDone?.7:1}">
+              <span style="color:var(--ink2);${isDone?'text-decoration:line-through':''}">${isDone?'✓ ':''}${esc(a.label)}</span>
+              <span style="font-weight:700">${money(a.amount)}</span>
+            </div>`;
+          });
+          b+=`<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;padding:6px 0;border-top:1px solid var(--border);margin-top:6px"><span>Total allocated</span><span>${money(totalAlloc)}</span></div>`;
+          b+=`<div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--mint-dk);padding-bottom:4px"><span>Completed</span><span>${money(doneAlloc)}</span></div>`;
+        }
+        b+=`</div>`;
+      }
+      b+=`</div>`;
+    });
+    return b;
+  }
+  // Use a closure trick — re-open sheet with toggled expand id
+  window.openPPHistory=function(eid){
+    expandedId=eid||null;
+    showSheet('Past Periods',buildBody(expandedId));
+  };
+  showSheet('Past Periods',buildBody(null));
+}
 
 // ─────────────────────────────────────────────
 // INIT
