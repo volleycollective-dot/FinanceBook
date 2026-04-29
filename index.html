@@ -542,8 +542,9 @@ function renderFunds(){
 
   funds.forEach((f,idx)=>{
     const billsAmt=(f.bills||[]).reduce((s,b)=>s+n(b.amount),0);
-    const allocsAmt=(f.allocations||[]).reduce((s,a)=>s+n(a.amount),0);
-    const left=n(f.amount)-billsAmt-allocsAmt;
+    const doneAllocsAmt=(f.allocations||[]).filter(a=>a.done).reduce((s,a)=>s+n(a.amount),0);
+    const totalAllocsAmt=(f.allocations||[]).reduce((s,a)=>s+n(a.amount),0);
+    const left=n(f.amount)-billsAmt-doneAllocsAmt;
     const leftColor=left<0?'var(--rose-dk)':left<50?'var(--amber-dk)':'var(--mint-dk)';
     const isOpen=f.id===_openFundId;
     const dateLabel=f.date?new Date(f.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
@@ -577,7 +578,7 @@ function renderFunds(){
         </div>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
           <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px">Moved</div>
-          <div style="font-size:16px;font-weight:800">${money(allocsAmt)}</div>
+          <div style="font-size:16px;font-weight:800">${money(doneAllocsAmt)}</div>
         </div>
       </div>`;
 
@@ -602,35 +603,58 @@ function renderFunds(){
         h+=`</div>`;
       }
 
-      // Allocations
+      // Allocations — pending then done
+      const pendingAllocs=(f.allocations||[]).filter(a=>!a.done);
+      const doneAllocs=(f.allocations||[]).filter(a=>a.done);
       h+=`<div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
-        <span>Money moved</span>
-        <button class="pill pill-ghost pill-sm" onclick="openAddFundAlloc('${f.id}')">+ Move money</button>
+        <span>Money to move${pendingAllocs.length?` <span style="background:var(--amber-lt);color:var(--amber-dk);padding:1px 7px;border-radius:99px;font-size:10px;font-weight:700">${pendingAllocs.length} pending</span>`:''}</span>
+        <button class="pill pill-ghost pill-sm" onclick="openAddFundAlloc('${f.id}')">+ Add</button>
       </div>`;
       if(!(f.allocations||[]).length){
-        h+=`<div style="font-size:12px;color:var(--ink3);margin-bottom:12px;padding:8px 0">Nothing moved yet.</div>`;
+        h+=`<div style="font-size:12px;color:var(--ink3);margin-bottom:12px;padding:8px 0">Nothing added yet.</div>`;
       }else{
         h+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px">`;
-        f.allocations.forEach(a=>{
+        pendingAllocs.forEach(a=>{
           const acct=(D.personal.accounts||[]).find(x=>x.id===a.destination);
           const dest=a.destination==='cash'?'Cash':acct?esc(acct.name):'';
           h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:1px solid var(--bg)">
-            <div>
+            <div style="flex:1;min-width:0">
               <div style="font-size:13px;font-weight:600">${esc(a.label)}</div>
               ${dest?`<div style="font-size:11px;color:var(--ink2)">→ ${dest}</div>`:''}
             </div>
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
               <div style="font-size:13px;font-weight:700">${money(a.amount)}</div>
+              <button class="pill pill-success pill-sm" onclick="toggleFundAllocDone('${f.id}','${a.id}',true)">Done</button>
               <button class="pill pill-danger pill-sm" onclick="removeFundAlloc('${f.id}','${a.id}')">✕</button>
             </div>
           </div>`;
         });
+        if(doneAllocs.length){
+          if(pendingAllocs.length) h+=`<div style="border-top:1px solid var(--border)"></div>`;
+          doneAllocs.forEach(a=>{
+            const acct=(D.personal.accounts||[]).find(x=>x.id===a.destination);
+            const dest=a.destination==='cash'?'Cash':acct?esc(acct.name):'';
+            h+=`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:1px solid var(--bg);opacity:.5;background:var(--bg)">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:600;text-decoration:line-through">✓ ${esc(a.label)}</div>
+                ${dest?`<div style="font-size:11px;color:var(--ink2)">→ ${dest}</div>`:''}
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                <div style="font-size:13px;font-weight:700;color:var(--ink3)">${money(a.amount)}</div>
+                <button class="pill pill-ghost pill-sm" onclick="toggleFundAllocDone('${f.id}','${a.id}',false)">Undo</button>
+              </div>
+            </div>`;
+          });
+        }
         h+=`</div>`;
       }
 
       // Remaining callout
       h+=`<div style="background:${left<0?'var(--rose-lt)':left<50?'var(--amber-lt)':'var(--mint-lt)'};border:1px solid ${left<0?'var(--rose-lt)':left<50?'var(--amber-lt)':'var(--mint-lt)'};border-radius:10px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div style="font-size:12px;font-weight:700;color:${left<0?'var(--rose-dk)':left<50?'var(--amber-dk)':'var(--mint-dk)'};text-transform:uppercase;letter-spacing:.07em">${left<0?'Over budget':'Remaining'}</div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:${left<0?'var(--rose-dk)':left<50?'var(--amber-dk)':'var(--mint-dk)'};text-transform:uppercase;letter-spacing:.07em">${left<0?'Over budget':'Remaining'}</div>
+          ${pendingAllocs.length?`<div style="font-size:11px;color:var(--ink2);margin-top:2px">${money(totalAllocsAmt-doneAllocsAmt)} still to move</div>`:''}
+        </div>
         <div style="font-size:20px;font-weight:800;color:${left<0?'var(--rose-dk)':left<50?'var(--amber-dk)':'var(--mint-dk)'}">${money(left)}</div>
       </div>`;
 
@@ -708,13 +732,13 @@ function openAssignBills(fundId){
   const assignedIds=(f.bills||[]).map(b=>b.billId);
   const bills=D.personal.bills||[];
   const available=bills.filter(b=>!assignedIds.includes(b.id));
-  if(!available.length){showSheet('Assign Bills','<div class="empty">All bills are already assigned to this check, or you have no bills set up.</div>');return;}
+  if(!available.length){showSheet('Assign Bills','<div class="empty">All bills are already assigned to this check, or you have no bills set up.</div><div class="form-btns"><button class="pill pill-ghost pill-full" onclick="closeSheet()">Close</button></div>');return;}
   let body='<div style="font-size:12px;color:var(--ink2);margin-bottom:14px;line-height:1.6">Select which bills this paycheck will cover.</div>';
-  body+=`<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px">`;
+  body+=`<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;max-height:45vh;overflow-y:auto;-webkit-overflow-scrolling:touch">`;
   available.forEach(b=>{
     const s=dueStatus(b.due);
-    body+=`<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--bg);cursor:pointer" onclick="this.querySelector('input').click()">
-      <input type="checkbox" id="cb-${b.id}" value="${b.id}" style="width:17px;height:17px;accent-color:var(--lav);flex-shrink:0;cursor:pointer">
+    body+=`<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--bg)" onclick="event.stopPropagation();document.getElementById('cb-${b.id}').click()">
+      <input type="checkbox" id="cb-${b.id}" value="${b.id}" style="width:17px;height:17px;accent-color:var(--lav);flex-shrink:0;cursor:pointer" onclick="event.stopPropagation()">
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:600">${esc(b.name)}</div>
         <div style="font-size:11px;color:${s==='rose'?'var(--rose)':s==='amber'?'var(--amber-dk)':'var(--ink3)'}">${dueLabel(b.due)||'No due date'}</div>
@@ -723,7 +747,10 @@ function openAssignBills(fundId){
     </div>`;
   });
   body+=`</div>`;
-  body+=`<div class="form-btns"><button class="pill pill-primary pill-full" onclick="saveAssignedBills('${fundId}')">Assign selected</button></div>`;
+  body+=`<div class="form-btns">
+    <button class="pill pill-primary" style="flex:2;padding:11px;font-size:13px" onclick="saveAssignedBills('${fundId}')">Assign selected</button>
+    <button class="pill pill-ghost" style="flex:1;padding:11px;font-size:13px" onclick="closeSheet()">Cancel</button>
+  </div>`;
   showSheet('Assign Bills',body);
 }
 function saveAssignedBills(fundId){
@@ -771,13 +798,18 @@ function saveFundAlloc(fundId){
   if(!lbl)return alert('Enter a label.');
   if(!amt||isNaN(amt))return alert('Enter an amount.');
   if(!f.allocations)f.allocations=[];
-  f.allocations.push({id:uid(),label:lbl,amount:amt,destination:document.getElementById('al-dest').value||''});
+  f.allocations.push({id:uid(),label:lbl,amount:amt,destination:document.getElementById('al-dest').value||'',done:false});
   saveFunds();closeSheet();render();
 }
 function removeFundAlloc(fundId,allocId){
   const f=(D.personal.funds||[]).find(x=>x.id===fundId);if(!f)return;
   f.allocations=(f.allocations||[]).filter(a=>a.id!==allocId);
   saveFunds();render();
+}
+function toggleFundAllocDone(fundId,allocId,done){
+  const f=(D.personal.funds||[]).find(x=>x.id===fundId);if(!f)return;
+  const a=(f.allocations||[]).find(x=>x.id===allocId);if(!a)return;
+  a.done=done;saveFunds();render();
 }
 // ─────────────────────────────────────────────
 function renderBills(){
