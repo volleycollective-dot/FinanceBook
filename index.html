@@ -413,7 +413,29 @@ function renderHome(){
     <div style="font-size:12px;color:var(--ink2);margin-top:2px">${new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})}</div>
   </div>`;
 
-  // ── BLOCK 1: Attention ──
+  // ── BLOCK 1: Pay Period ──
+  const ppColor=!pp.nextPayday?'var(--ink2)':unalloc<0?'var(--rose-dk)':unalloc<100?'var(--amber-dk)':'var(--mint-dk)';
+  h+=`<div class="narr-block" style="margin-bottom:10px">
+    <div class="narr-label">Pay Period
+      ${pp.nextPayday?`<span style="font-size:11px;font-weight:600;color:var(--ink2);text-transform:none;letter-spacing:0">${days===null?'':days<=0?'Payday!':days===1?'Tomorrow':days+'d to payday'}</span>`:''}
+    </div>`;
+  if(!pp.nextPayday){
+    h+=`<div style="font-size:13px;color:var(--ink2);padding:6px 0">Not set up. <span style="color:var(--lav);cursor:pointer;font-weight:600" onclick="go('pay-period')">Set up →</span></div>`;
+  }else{
+    h+=`<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px">
+      <div><div style="font-size:11px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Unallocated</div>
+      <div style="font-size:28px;font-weight:800;letter-spacing:-.03em;color:${ppColor}">${money(unalloc)}</div></div>
+    </div>
+    <div style="display:flex;gap:16px;font-size:12px;padding-top:10px;border-top:1px solid var(--bg)">
+      <div><span style="color:var(--ink3)">In </span><span style="font-weight:700;color:var(--mint-dk)">${money(totalIn)}</span></div>
+      <div><span style="color:var(--ink3)">Bills </span><span style="font-weight:700;color:var(--rose-dk)">${money(committedAmt)}</span></div>
+      <div><span style="color:var(--ink3)">Alloc </span><span style="font-weight:700">${money(allocAmt)}</span></div>
+    </div>`;
+  }
+  h+=`<div style="margin-top:10px"><span style="font-size:12px;color:var(--lav);cursor:pointer;font-weight:600" onclick="go('pay-period')">Go to Pay Period →</span></div>
+  </div>`;
+
+  // ── BLOCK 2: Attention ──
   h+=`<div class="narr-block" style="margin-bottom:10px">
     <div class="narr-label">Attention${overdues.length?`<span style="background:var(--rose-lt);color:var(--rose-dk);padding:2px 8px;border-radius:99px;font-size:10px">${overdues.length} overdue</span>`:''}
     </div>`;
@@ -437,31 +459,28 @@ function renderHome(){
       });
     }
   }
-  h+=`</div>`;
-
-  // ── BLOCK 2: Pay Period ──
-  const ppColor=!pp.nextPayday?'var(--ink2)':unalloc<0?'var(--rose-dk)':unalloc<100?'var(--amber-dk)':'var(--mint-dk)';
-  h+=`<div class="narr-block" style="margin-bottom:10px">
-    <div class="narr-label">Pay Period
-      ${pp.nextPayday?`<span style="font-size:11px;font-weight:600;color:var(--ink2);text-transform:none;letter-spacing:0">${days===null?'':days<=0?'Payday!':days===1?'Tomorrow':days+'d to payday'}</span>`:''}
-    </div>`;
-  if(!pp.nextPayday){
-    h+=`<div style="font-size:13px;color:var(--ink2);padding:6px 0">Not set up. <span style="color:var(--lav);cursor:pointer;font-weight:600" onclick="go('pay-period')">Set up →</span></div>`;
-  }else{
-    h+=`<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px">
-      <div><div style="font-size:11px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Unallocated</div>
-      <div style="font-size:28px;font-weight:800;letter-spacing:-.03em;color:${ppColor}">${money(unalloc)}</div></div>
-    </div>
-    <div style="display:flex;gap:16px;font-size:12px;padding-top:10px;border-top:1px solid var(--bg)">
-      <div><span style="color:var(--ink3)">In </span><span style="font-weight:700;color:var(--mint-dk)">${money(totalIn)}</span></div>
-      <div><span style="color:var(--ink3)">Bills </span><span style="font-weight:700;color:var(--rose-dk)">${money(committedAmt)}</span></div>
-      <div><span style="color:var(--ink3)">Alloc </span><span style="font-weight:700">${money(allocAmt)}</span></div>
-    </div>`;
-  }
-  h+=`<div style="margin-top:10px"><span style="font-size:12px;color:var(--lav);cursor:pointer;font-weight:600" onclick="go('pay-period')">Go to Pay Period →</span></div>
+  h+=`<div style="margin-top:10px"><span style="font-size:12px;color:var(--lav);cursor:pointer;font-weight:600" onclick="go('bills')">See all bills →</span></div>
   </div>`;
 
-  // ── BLOCK 3: Accounts & Net Worth ──
+  // ── BLOCK 3: Upcoming Bills ──
+  const upcomingBills=p.bills.filter(b=>!b.paid&&b.due).sort((a,b)=>(a.due||'').localeCompare(b.due||'')).slice(0,5);
+  h+=`<div class="narr-block" style="margin-bottom:10px">
+    <div class="narr-label">Upcoming Bills</div>`;
+  if(!upcomingBills.length){
+    h+=`<div style="font-size:13px;color:var(--ink2);padding:6px 0">No upcoming bills.</div>`;
+  }else{
+    upcomingBills.forEach(b=>{
+      const s=dueStatus(b.due);
+      h+=`<div class="narr-row" onclick="go('bills')" style="cursor:pointer">
+        <div><div class="narr-key">${esc(b.name)}</div><div style="font-size:11px;color:${s==='rose'?'var(--rose)':s==='amber'?'var(--amber-dk)':'var(--ink3)'}">${dueLabel(b.due)}</div></div>
+        <div class="narr-val" style="color:${s==='rose'?'var(--rose-dk)':s==='amber'?'var(--amber-dk)':'var(--ink)'}">${money(b.amount)}</div>
+      </div>`;
+    });
+  }
+  h+=`<div style="margin-top:10px"><span style="font-size:12px;color:var(--lav);cursor:pointer;font-weight:600" onclick="go('bills')">See all bills →</span></div>
+  </div>`;
+
+  // ── BLOCK 4: Accounts & Net Worth ──
   h+=`<div class="narr-block" style="margin-bottom:10px">
     <div class="narr-label">Accounts & Net Worth</div>
     <div class="narr-row">
@@ -520,103 +539,68 @@ function renderPayPeriod(){
     return h+`<div class="empty"><div style="font-size:36px;margin-bottom:12px">📅</div><div style="font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px">Set up your pay period</div>Enter your next SGWS payday to get started.<br><br><button class="pill pill-primary pill-lg" onclick="openPPSettings()">Get started</button></div>`;
   }
 
+  // ── STEP 1: Income ──
+  h+=`<div class="sec-lbl"><span>Income this period</span></div>`;
+  h+=`<div class="card" style="margin-bottom:6px">`;
+  if(income.length===0){
+    h+=`<div class="row center"><div class="row-main" style="color:var(--ink3);font-size:13px">No income added yet</div></div>`;
+  }else{
+    income.forEach(i=>{
+      const acct=(D.personal.accounts||[]).find(a=>a.id===i.accountId);
+      h+=`<div class="row center">
+        <div class="row-main">
+          <div class="row-name">${esc(i.label)}</div>
+          ${acct?`<div class="row-sub">${esc(acct.name)}</div>`:''}
+        </div>
+        <div class="row-right">
+          <div class="row-amt pos">+${money(i.amount)}</div>
+          <button class="pill pill-danger pill-sm" onclick="deletePPIncome('${i.id}')">✕</button>
+        </div>
+      </div>`;
+    });
+    h+=`<div style="padding:9px 14px;background:var(--mint-lt);border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--mint-dk)"><span>Total in</span><span>+${money(totalIn)}</span></div>`;
+  }
+  h+=`</div>`;
+  h+=`<div class="qrow" style="margin-bottom:18px"><button class="pill pill-primary" onclick="openAddPPIncome()">+ Add income</button></div>`;
+
+  // ── STEP 2: Budget summary ──
   const uColor=over?'var(--rose-dk)':unalloc<100?'var(--amber-dk)':'var(--mint-dk)';
   const uLabel=over?'Over budget':'Unallocated';
-  h+=`<div class="stat-block">
-    <div class="stat-label">${uLabel}</div>
-    <div class="stat-num" style="color:${uColor}">${money(unalloc)}</div>
-    ${over?`<div class="stat-sub" style="color:var(--rose-dk)">Bills + allocations exceed income by ${money(Math.abs(unalloc))}</div>`:'<div class="stat-sub" style="color:var(--ink3)">Remaining after bills &amp; allocations</div>'}
-    <div style="margin-top:12px;border-top:1px solid var(--bg);padding-top:10px;display:flex;flex-direction:column;gap:5px">
-      <div style="display:flex;justify-content:space-between;font-size:12px">
+  h+=`<div class="sec-lbl">Budget</div>`;
+  h+=`<div class="narr-block" style="margin-bottom:6px">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;justify-content:space-between;font-size:13px">
         <span style="color:var(--ink2)">Income</span>
         <span style="font-weight:700;color:var(--mint-dk)">+${money(totalIn)}</span>
       </div>
-      ${committedAmt>0?`<div style="display:flex;justify-content:space-between;font-size:12px">
+      <div style="display:flex;justify-content:space-between;font-size:13px">
         <span style="color:var(--ink2)">Committed bills</span>
         <span style="font-weight:700;color:var(--rose-dk)">−${money(committedAmt)}</span>
-      </div>`:''}
-      ${allocAmt>0?`<div style="display:flex;justify-content:space-between;font-size:12px">
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px">
         <span style="color:var(--ink2)">Allocations</span>
         <span style="font-weight:700">−${money(allocAmt)}</span>
-      </div>`:''}
-      <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;padding-top:5px;border-top:1px solid var(--border)">
-        <span style="color:${uColor}">${uLabel}</span>
-        <span style="color:${uColor}">${money(unalloc)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:8px;border-top:1px solid var(--border);margin-top:2px">
+        <span style="font-size:13px;font-weight:700;color:${uColor}">${uLabel}</span>
+        <span style="font-size:22px;font-weight:800;letter-spacing:-.03em;color:${uColor}">${money(unalloc)}</span>
       </div>
     </div>
   </div>`;
-
-  h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+  h+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px">
     <div class="box" style="margin:0;padding:14px">
-      <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Payday</div>
+      <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Next payday</div>
       <div style="font-size:15px;font-weight:700">${new Date(pp.nextPayday+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>
       <div style="font-size:12px;color:var(--ink2);margin-top:1px">${days<=0?'Today!':days===1?'Tomorrow':days+'d away'}</div>
       <div style="background:var(--bg);border-radius:2px;height:3px;margin-top:10px;overflow:hidden;border:1px solid var(--border)"><div style="height:3px;border-radius:2px;background:var(--lav);width:${pct.toFixed(0)}%"></div></div>
     </div>
     <div class="box" style="margin:0;padding:14px;cursor:pointer" onclick="startNewPeriod()">
-      <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">New period</div>
+      <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Start new period</div>
       <div style="font-size:12px;color:var(--ink2);line-height:1.5">Tap when next check arrives to reset</div>
     </div>
   </div>`;
 
-  h+=`<div class="qrow">
-    <button class="pill pill-primary" onclick="openAddPPIncome()">+ Add income</button>
-    <button class="pill pill-soft" onclick="openAddAlloc()">+ Allocate</button>
-  </div>`;
-
-  // Compact income strip
-  h+=`<div style="background:var(--mint-lt);border:1px solid var(--mint-lt);border-radius:12px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-    <div style="flex:1;min-width:0">
-      <div style="font-size:10px;font-weight:700;color:var(--mint-dk);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Income this period</div>
-      ${income.length===0
-        ? `<div style="font-size:12px;color:var(--mint-dk);opacity:.65">None added yet</div>`
-        : income.map(i=>{
-            const acct=(D.personal.accounts||[]).find(a=>a.id===i.accountId);
-            return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;margin-bottom:2px">
-              <span style="color:var(--mint-dk);font-weight:500">${esc(i.label)}${acct?' <span style="opacity:.6">· '+esc(acct.name)+'</span>':''}</span>
-              <span style="display:flex;align-items:center;gap:6px">
-                <span style="font-weight:700;color:var(--mint-dk)">+${money(i.amount)}</span>
-                <button class="pill pill-sm" style="background:rgba(0,0,0,.06);color:var(--mint-dk);border:none;padding:2px 7px" onclick="deletePPIncome('${i.id}')">✕</button>
-              </span>
-            </div>`;
-          }).join('')
-      }
-    </div>
-    <div style="font-size:18px;font-weight:700;color:var(--mint-dk);white-space:nowrap;padding-left:8px;border-left:1px solid rgba(26,102,68,.2)">${money(totalIn)}</div>
-  </div>`;
-
-  // Account pending breakdown
-  const pendingBreakdown={};
-  bills.filter(b=>committed.includes(b.id)&&!b.paid).forEach(b=>{
-    if(!pendingBreakdown['__bills__'])pendingBreakdown['__bills__']={label:'Bills (unpaid)',amt:0};
-    pendingBreakdown['__bills__'].amt+=n(b.amount);
-  });
-  allocs.filter(a=>!a.done).forEach(a=>{
-    const acct=(D.personal.accounts||[]).find(x=>x.id===a.destination);
-    const k=a.destination==='cash'?'__cash__':a.destination||'__none__';
-    const lbl=a.destination==='cash'?'Cash':acct?acct.name:'Other';
-    if(!pendingBreakdown[k])pendingBreakdown[k]={label:lbl,amt:0};
-    pendingBreakdown[k].amt+=n(a.amount);
-  });
-  const pKeys=Object.keys(pendingBreakdown);
-  const pendingTotal=pKeys.reduce((s,k)=>s+pendingBreakdown[k].amt,0);
-  if(pKeys.length>0){
-    h+=`<div class="sec-lbl">Still needs to happen</div>`;
-    h+=`<div class="card" style="margin-bottom:14px">`;
-    pKeys.forEach(k=>{
-      const b=pendingBreakdown[k];
-      h+=`<div class="row center">
-        <div class="row-main"><div class="row-name">${esc(b.label)}</div></div>
-        <div style="font-size:14px;font-weight:700;color:var(--ink)">$${b.amt.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
-      </div>`;
-    });
-    h+=`<div style="padding:10px 14px;background:var(--amber-lt);border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--amber-dk)"><span>Still to move</span><span>${money(pendingTotal)}</span></div>`;
-    h+=`</div>`;
-  } else if(allocs.length>0||committed.length>0){
-    h+=`<div class="box box-mint" style="text-align:center;padding:14px;font-size:13px;color:var(--mint-dk);font-weight:600;margin-bottom:14px">✓ All allocations done for this period</div>`;
-  }
-
-  // Allocations
+  // ── STEP 3: Allocations ──
   const pending=allocs.filter(a=>!a.done);
   const done=allocs.filter(a=>a.done);
   const doneAmt=done.reduce((s,a)=>s+n(a.amount),0);
@@ -624,7 +608,6 @@ function renderPayPeriod(){
   h+=`<div class="sec-lbl"><span style="display:flex;align-items:center;gap:6px">Allocations ${pendingBadge}</span></div>`;
   if(allocs.length){
     h+=`<div class="card">`;
-    // Pending allocations always shown
     pending.forEach(a=>{
       const acct=(D.personal.accounts||[]).find(x=>x.id===a.destination);
       const dest=a.destination==='cash'?'Cash':acct?esc(acct.name):'';
@@ -644,7 +627,6 @@ function renderPayPeriod(){
         </div>
       </div>`;
     });
-    // Done allocations — hidden by default, toggle to show
     if(done.length){
       if(pending.length){h+=`<div style="border-top:1px solid var(--border)"></div>`;}
       h+=`<div class="row center" style="cursor:pointer;background:var(--bg)" onclick="_showDoneAllocs=!_showDoneAllocs;render()">
@@ -677,8 +659,9 @@ function renderPayPeriod(){
   }else{
     h+=`<div class="box box-lav" style="text-align:center;padding:14px;font-size:12px;color:var(--lav-dk)">Tap <strong>+ Allocate</strong> to divide what's left — groceries, gas, savings, etc.</div>`;
   }
+  h+=`<div class="qrow" style="margin-bottom:18px"><button class="pill pill-soft" onclick="openAddAlloc()">+ Allocate</button></div>`;
 
-  // Bills — overdue first, then period window
+  // ── STEP 4: Bills this period ──
   if(overdues.length){
     h+=`<div class="sec-lbl" style="color:var(--rose-dk)">Overdue (${overdues.length})</div>`;
     h+=`<div class="card">`;
@@ -700,7 +683,7 @@ function renderPayPeriod(){
     h+=`</div>`;
   }
 
-  h+=`<div class="sec-lbl">Bills this period</div>`;
+  h+=`<div class="sec-lbl">Bills this period <span style="font-size:10px;font-weight:500;color:var(--ink3);text-transform:none;letter-spacing:0">— check to commit to budget</span></div>`;
   if(!winBills.length){
     h+=`<div class="box" style="text-align:center;padding:14px;color:var(--ink2);font-size:12px">No bills due in the next 14 days.</div>`;
   }else{
@@ -723,7 +706,6 @@ function renderPayPeriod(){
       </div>`;
     });h+=`</div>`;
   }
-  // Past periods link
   const history=D.personal.ppHistory||[];
   if(history.length){
     h+=`<div style="margin-top:20px;text-align:center">
