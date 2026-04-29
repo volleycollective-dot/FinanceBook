@@ -610,40 +610,48 @@ function renderPayPeriod(){
   // ── STEP 3: Actions ──
   const pendingBillActions=bills.filter(b=>committed.includes(b.id)&&!b.paid);
   const pendingAllocActions=allocs.filter(a=>!a.done);
-  const totalActions=pendingBillActions.length+pendingAllocActions.length;
+  const billsDone=!!(pp.billActionDone);
+  const pendingBillRow=pendingBillActions.length>0&&!billsDone?1:0;
+  // Group pending allocs by destination
+  const allocGroups={};
+  pendingAllocActions.forEach(a=>{const k=a.destination||'';if(!allocGroups[k])allocGroups[k]=[];allocGroups[k].push(a);});
+  const allocGroupKeys=Object.keys(allocGroups);
+  const totalActions=pendingBillRow+allocGroupKeys.length;
   const actionBadge=totalActions>0?`<span style="background:var(--amber-lt);color:var(--amber-dk);border:1px solid var(--amber-lt);padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">${totalActions} to do</span>`:'';
   h+=`<div class="sec-lbl"><span style="display:flex;align-items:center;gap:6px">Actions ${actionBadge}</span></div>`;
   if(totalActions===0){
     h+=`<div class="box box-mint" style="text-align:center;padding:14px;font-size:13px;color:var(--mint-dk);font-weight:600;margin-bottom:14px">✓ All actions complete for this period</div>`;
   }else{
     h+=`<div class="card" style="margin-bottom:14px">`;
-    pendingBillActions.forEach(b=>{
-      const s=dueStatus(b.due);
+    if(pendingBillRow){
+      const billTotal=pendingBillActions.reduce((s,b)=>s+n(b.amount),0);
       h+=`<div class="row center">
-        <div class="dot ${s==='rose'?'rose':s==='amber'?'amber':'mint'}" style="margin-top:0;flex-shrink:0"></div>
+        <div class="dot rose" style="margin-top:0;flex-shrink:0"></div>
         <div class="row-main">
-          <div class="row-name">Pay ${esc(b.name)}</div>
-          <div class="row-sub ${s==='rose'?'urgent':s==='amber'?'soon':''}">${dueLabel(b.due)}</div>
+          <div class="row-name">Committed Bills</div>
+          <div class="row-sub">${pendingBillActions.length} bill${pendingBillActions.length>1?'s':''} · move from checking</div>
         </div>
         <div class="row-right">
-          <div class="row-amt neg">${money(b.amount)}</div>
-          <button class="pill pill-success pill-sm" onclick="markPaid('${b.id}')">Paid</button>
+          <div class="row-amt neg">${money(billTotal)}</div>
+          <button class="pill pill-success pill-sm" onclick="markBillActionDone()">Done</button>
         </div>
       </div>`;
-    });
-    if(pendingBillActions.length&&pendingAllocActions.length){h+=`<div style="border-top:1px solid var(--border)"></div>`;}
-    pendingAllocActions.forEach(a=>{
-      const acct=(D.personal.accounts||[]).find(x=>x.id===a.destination);
-      const dest=a.destination==='cash'?'Cash':acct?esc(acct.name):'';
+    }
+    if(pendingBillRow&&allocGroupKeys.length){h+=`<div style="border-top:1px solid var(--border)"></div>`;}
+    allocGroupKeys.forEach((destKey,idx)=>{
+      const group=allocGroups[destKey];
+      const groupTotal=group.reduce((s,a)=>s+n(a.amount),0);
+      const acct=(D.personal.accounts||[]).find(x=>x.id===destKey);
+      const destName=destKey==='cash'?'Cash':acct?esc(acct.name):'Unspecified';
       h+=`<div class="row center">
         <div class="dot lav" style="margin-top:0;flex-shrink:0"></div>
         <div class="row-main">
-          <div class="row-name">Move ${esc(a.label)}${dest?' → '+dest:''}</div>
-          <div class="row-sub">Allocation</div>
+          <div class="row-name">Move → ${destName}</div>
+          <div class="row-sub">${group.length} allocation${group.length>1?'s':''}</div>
         </div>
         <div class="row-right">
-          <div class="row-amt">${money(a.amount)}</div>
-          <button class="pill pill-success pill-sm" onclick="toggleAllocDone('${a.id}',true)">Done</button>
+          <div class="row-amt">${money(groupTotal)}</div>
+          <button class="pill pill-success pill-sm" onclick="markAllocGroupDone('${esc(destKey)}')">Done</button>
         </div>
       </div>`;
     });
@@ -1645,6 +1653,8 @@ function saveAlloc(){const lbl=(document.getElementById('al-lbl').value||'').tri
 function updateAlloc(id){const lbl=(document.getElementById('al-lbl').value||'').trim();const amt=parseFloat(document.getElementById('al-amt').value);if(!lbl)return alert('Enter a label.');if(!amt)return alert('Enter an amount.');const pp=getPP();const a=pp.allocations.find(x=>x.id===id);if(!a)return;a.label=lbl;a.amount=amt;a.destination=document.getElementById('al-dest').value||'';savePP(pp);closeSheet();render();}
 function deleteAlloc(id){const pp=getPP();pp.allocations=pp.allocations.filter(x=>x.id!==id);savePP(pp);render();}
 function toggleAllocDone(id,done){const pp=getPP();const a=pp.allocations.find(x=>x.id===id);if(a){a.done=done;savePP(pp);render();}}
+function markBillActionDone(){const pp=getPP();pp.billActionDone=true;savePP(pp);render();}
+function markAllocGroupDone(destKey){const pp=getPP();(pp.allocations||[]).forEach(a=>{if((a.destination||'')===destKey&&!a.done)a.done=true;});savePP(pp);render();}
 function startNewPeriod(){
   if(!confirm('Start a new period? Current income and allocations will be archived and cleared. Payday advances 14 days.'))return;
   const pp=getPP();
@@ -1662,7 +1672,7 @@ function startNewPeriod(){
   save('p_pp_history');
   // Reset for new period
   pp.nextPayday=ppAdvance(pp.nextPayday);
-  pp.income=[];pp.committedBills=[];pp.allocations=[];
+  pp.income=[];pp.committedBills=[];pp.allocations=[];pp.billActionDone=false;
   savePP(pp);
   _showDoneAllocs=false;
   render();
