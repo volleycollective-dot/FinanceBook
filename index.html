@@ -544,7 +544,7 @@ function renderFunds(){
     const billsAmt=(f.bills||[]).reduce((s,b)=>s+n(b.amount),0);
     const doneAllocsAmt=(f.allocations||[]).filter(a=>a.done).reduce((s,a)=>s+n(a.amount),0);
     const totalAllocsAmt=(f.allocations||[]).reduce((s,a)=>s+n(a.amount),0);
-    const left=n(f.amount)-billsAmt-doneAllocsAmt;
+    const left=n(f.amount)-billsAmt-totalAllocsAmt;
     const leftColor=left<0?'var(--rose-dk)':left<50?'var(--amber-dk)':'var(--mint-dk)';
     const isOpen=f.id===_openFundId;
     const dateLabel=f.date?new Date(f.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
@@ -653,7 +653,7 @@ function renderFunds(){
       h+=`<div style="background:${left<0?'var(--rose-lt)':left<50?'var(--amber-lt)':'var(--mint-lt)'};border:1px solid ${left<0?'var(--rose-lt)':left<50?'var(--amber-lt)':'var(--mint-lt)'};border-radius:10px;padding:11px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <div>
           <div style="font-size:12px;font-weight:700;color:${left<0?'var(--rose-dk)':left<50?'var(--amber-dk)':'var(--mint-dk)'};text-transform:uppercase;letter-spacing:.07em">${left<0?'Over budget':'Remaining'}</div>
-          ${pendingAllocs.length?`<div style="font-size:11px;color:var(--ink2);margin-top:2px">${money(totalAllocsAmt-doneAllocsAmt)} still to move</div>`:''}
+          ${pendingAllocs.length?`<div style="font-size:11px;color:var(--ink2);margin-top:2px">${money(totalAllocsAmt-doneAllocsAmt)} not yet physically moved</div>`:''}
         </div>
         <div style="font-size:20px;font-weight:800;color:${left<0?'var(--rose-dk)':left<50?'var(--amber-dk)':'var(--mint-dk)'}">${money(left)}</div>
       </div>`;
@@ -731,7 +731,7 @@ function openAssignBills(fundId){
   const f=(D.personal.funds||[]).find(x=>x.id===fundId);if(!f)return;
   const assignedIds=(f.bills||[]).map(b=>b.billId);
   const bills=D.personal.bills||[];
-  const available=bills.filter(b=>!assignedIds.includes(b.id));
+  const available=bills.filter(b=>!assignedIds.includes(b.id)).sort((a,b)=>(a.due||'9999').localeCompare(b.due||'9999'));
   if(!available.length){showSheet('Assign Bills','<div class="empty">All bills are already assigned to this check, or you have no bills set up.</div><div class="form-btns"><button class="pill pill-ghost pill-full" onclick="closeSheet()">Close</button></div>');return;}
   let body='<div style="font-size:12px;color:var(--ink2);margin-bottom:14px;line-height:1.6">Select which bills this paycheck will cover.</div>';
   body+=`<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;max-height:45vh;overflow-y:auto;-webkit-overflow-scrolling:touch">`;
