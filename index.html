@@ -392,6 +392,23 @@ function overdueBills(){
 }
 
 // ─────────────────────────────────────────────
+// PERSONAL QUICK LINKS — appended to every personal screen
+// ─────────────────────────────────────────────
+function personalQuickLinks(){
+  const cur=NAV.screen;
+  const links=[
+    {s:'home',lbl:'Home'},{s:'pay-period',lbl:'Pay Period'},
+    {s:'bills',lbl:'Bills'},{s:'debts',lbl:'Debts'},
+    {s:'income',lbl:'Income'},{s:'accounts',lbl:'Accounts'},
+  ];
+  if(D.personal.debts.length)links.push({s:'debt-plan',lbl:'Debt Plan'});
+  return`<div class="sec-lbl" style="margin-top:24px">Quick links</div>
+  <div class="ql-row">
+    ${links.filter(l=>l.s!==cur).map(l=>`<button class="pill pill-ghost" onclick="go('${l.s}')">${l.lbl}</button>`).join('')}
+  </div>`;
+}
+
+// ─────────────────────────────────────────────
 // PERSONAL HOME — narrative flow, urgency-first
 // ─────────────────────────────────────────────
 function renderHome(){
@@ -497,17 +514,7 @@ function renderHome(){
     </div>
   </div>`;
 
-  // ── QUICK LINKS ──
-  h+=`<div class="sec-lbl" style="margin-top:16px">Quick links</div>
-  <div class="ql-row">
-    <button class="pill pill-ghost" onclick="go('bills')">Bills</button>
-    <button class="pill pill-ghost" onclick="go('debts')">Debts</button>
-    <button class="pill pill-ghost" onclick="go('income')">Income</button>
-    <button class="pill pill-ghost" onclick="go('accounts')">Accounts</button>
-    <button class="pill pill-ghost" onclick="go('pay-period')">Pay Period</button>
-    ${p.debts.length?`<button class="pill pill-ghost" onclick="go('debt-plan')">Debt Plan</button>`:''}
-  </div>`;
-
+  h+=personalQuickLinks();
   return h;
 }
 
@@ -713,6 +720,7 @@ function renderPayPeriod(){
     </div>`;
   }
 
+  h+=personalQuickLinks();
   return h;
 }
 // ─────────────────────────────────────────────
@@ -750,6 +758,7 @@ function renderBills(){
         </div></div></div>`;
     });h+=`</div>`;
   }
+  h+=personalQuickLinks();
   return h;
 }
 
@@ -826,6 +835,7 @@ function renderDebts(){
       </div>
     </div>`;
   });
+  h+=personalQuickLinks();
   return h;
 }
 
@@ -886,6 +896,7 @@ function renderDebtPlan(){
     <div id="xcalc"></div>
   </div>`;
   setTimeout(updateXCalc,50);
+  h+=personalQuickLinks();
   return h;
 }
 function setX(v){const e=document.getElementById('xpmt');if(e){e.value=v;updateXCalc();}}
@@ -924,7 +935,9 @@ function renderAccounts(sec){
     <div class="row-right"><div class="row-amt ${n(a.balance)>=0?'pos':'neg'}">${money(a.balance)}</div>
     <div class="rpills"><button class="pill pill-ghost pill-sm" onclick="openSheet('account-edit','${a.id}|${sec}')">Edit</button><button class="pill pill-danger pill-sm" onclick="deleteAccount('${a.id}','${sec}')">Delete</button></div>
     </div></div>`;
-  });h+=`</div>`;return h;
+  });h+=`</div>`;
+  if(isP)h+=personalQuickLinks();
+  return h;
 }
 
 // ─────────────────────────────────────────────
@@ -944,7 +957,9 @@ function renderIncome(){
     <div class="row-right"><div class="row-amt pos">+${money(i.amount)}</div>
     <div class="rpills"><button class="pill pill-ghost pill-sm" onclick="openSheet('income-edit','${i.id}')">Edit</button><button class="pill pill-danger pill-sm" onclick="deleteIncome('${i.id}')">Delete</button></div>
     </div></div>`;
-  });h+=`</div>`;return h;
+  });h+=`</div>`;
+  h+=personalQuickLinks();
+  return h;
 }
 
 // ─────────────────────────────────────────────
