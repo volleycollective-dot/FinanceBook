@@ -566,21 +566,43 @@ function renderFunds(){
     if(isOpen){
       h+=`<div style="border-top:1px solid var(--border);padding:14px 16px;background:var(--bg)">`;
 
-      // Summary strip
-      h+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px">
-        <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
-          <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px">Income</div>
-          <div style="font-size:16px;font-weight:800;color:var(--mint-dk)">${money(f.amount)}</div>
-        </div>
-        <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
-          <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px">Bills</div>
-          <div style="font-size:16px;font-weight:800;color:var(--rose-dk)">${money(billsAmt)}</div>
-        </div>
-        <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center">
-          <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px">Moved</div>
-          <div style="font-size:16px;font-weight:800">${money(doneAllocsAmt)}</div>
-        </div>
+      // Summary strip — Income, Bills, then one tile per destination
+      const destMap={};
+      (f.allocations||[]).forEach(a=>{
+        const key=a.destination||'__unset__';
+        if(!destMap[key])destMap[key]={amt:0,done:0};
+        destMap[key].amt+=n(a.amount);
+        if(a.done)destMap[key].done+=n(a.amount);
+      });
+      const destKeys=Object.keys(destMap);
+      h+=`<div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin-bottom:14px;padding-bottom:2px">`;
+      h+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;text-align:center;flex-shrink:0;min-width:90px">
+        <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px">Income</div>
+        <div style="font-size:15px;font-weight:800;color:var(--mint-dk)">${money(f.amount)}</div>
       </div>`;
+      h+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;text-align:center;flex-shrink:0;min-width:90px">
+        <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px">Bills</div>
+        <div style="font-size:15px;font-weight:800;color:var(--rose-dk)">${money(billsAmt)}</div>
+      </div>`;
+      if(destKeys.length){
+        destKeys.forEach(key=>{
+          const acct=(D.personal.accounts||[]).find(x=>x.id===key);
+          const destName=key==='cash'?'Cash':key==='__unset__'?'Unassigned':acct?esc(acct.name):'Unknown';
+          const d=destMap[key];
+          const allDone=Math.abs(d.done-d.amt)<0.01;
+          h+=`<div style="background:var(--card);border:1px solid ${allDone?'var(--mint-lt)':'var(--border)'};border-radius:10px;padding:10px 14px;text-align:center;flex-shrink:0;min-width:90px">
+            <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px;white-space:nowrap">${destName}</div>
+            <div style="font-size:15px;font-weight:800;color:${allDone?'var(--mint-dk)':'var(--ink)'}">${money(d.amt)}</div>
+            ${allDone?`<div style="font-size:10px;color:var(--mint-dk);font-weight:600;margin-top:2px">✓ moved</div>`:`<div style="font-size:10px;color:var(--amber-dk);font-weight:600;margin-top:2px">${money(d.amt-d.done)} left</div>`}
+          </div>`;
+        });
+      }else{
+        h+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 14px;text-align:center;flex-shrink:0;min-width:90px">
+          <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px">Moved</div>
+          <div style="font-size:15px;font-weight:800">${money(0)}</div>
+        </div>`;
+      }
+      h+=`</div>`;
 
       // Bills assigned
       h+=`<div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
