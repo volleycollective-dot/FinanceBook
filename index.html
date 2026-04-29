@@ -607,7 +607,50 @@ function renderPayPeriod(){
     </div>
   </div>`;
 
-  // ── STEP 3: Allocations ──
+  // ── STEP 3: Actions ──
+  const pendingBillActions=bills.filter(b=>committed.includes(b.id)&&!b.paid);
+  const pendingAllocActions=allocs.filter(a=>!a.done);
+  const totalActions=pendingBillActions.length+pendingAllocActions.length;
+  const actionBadge=totalActions>0?`<span style="background:var(--amber-lt);color:var(--amber-dk);border:1px solid var(--amber-lt);padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">${totalActions} to do</span>`:'';
+  h+=`<div class="sec-lbl"><span style="display:flex;align-items:center;gap:6px">Actions ${actionBadge}</span></div>`;
+  if(totalActions===0){
+    h+=`<div class="box box-mint" style="text-align:center;padding:14px;font-size:13px;color:var(--mint-dk);font-weight:600;margin-bottom:14px">✓ All actions complete for this period</div>`;
+  }else{
+    h+=`<div class="card" style="margin-bottom:14px">`;
+    pendingBillActions.forEach(b=>{
+      const s=dueStatus(b.due);
+      h+=`<div class="row center">
+        <div class="dot ${s==='rose'?'rose':s==='amber'?'amber':'mint'}" style="margin-top:0;flex-shrink:0"></div>
+        <div class="row-main">
+          <div class="row-name">Pay ${esc(b.name)}</div>
+          <div class="row-sub ${s==='rose'?'urgent':s==='amber'?'soon':''}">${dueLabel(b.due)}</div>
+        </div>
+        <div class="row-right">
+          <div class="row-amt neg">${money(b.amount)}</div>
+          <button class="pill pill-success pill-sm" onclick="markPaid('${b.id}')">Paid</button>
+        </div>
+      </div>`;
+    });
+    if(pendingBillActions.length&&pendingAllocActions.length){h+=`<div style="border-top:1px solid var(--border)"></div>`;}
+    pendingAllocActions.forEach(a=>{
+      const acct=(D.personal.accounts||[]).find(x=>x.id===a.destination);
+      const dest=a.destination==='cash'?'Cash':acct?esc(acct.name):'';
+      h+=`<div class="row center">
+        <div class="dot lav" style="margin-top:0;flex-shrink:0"></div>
+        <div class="row-main">
+          <div class="row-name">Move ${esc(a.label)}${dest?' → '+dest:''}</div>
+          <div class="row-sub">Allocation</div>
+        </div>
+        <div class="row-right">
+          <div class="row-amt">${money(a.amount)}</div>
+          <button class="pill pill-success pill-sm" onclick="toggleAllocDone('${a.id}',true)">Done</button>
+        </div>
+      </div>`;
+    });
+    h+=`</div>`;
+  }
+
+  // ── STEP 4: Allocations ──
   const pending=allocs.filter(a=>!a.done);
   const done=allocs.filter(a=>a.done);
   const doneAmt=done.reduce((s,a)=>s+n(a.amount),0);
@@ -619,8 +662,6 @@ function renderPayPeriod(){
       const acct=(D.personal.accounts||[]).find(x=>x.id===a.destination);
       const dest=a.destination==='cash'?'Cash':acct?esc(acct.name):'';
       h+=`<div class="row center">
-        <input type="checkbox" onchange="toggleAllocDone('${a.id}',this.checked)"
-          style="width:17px;height:17px;flex-shrink:0;accent-color:var(--lav);cursor:pointer">
         <div class="row-main">
           <div class="row-name">${esc(a.label)}</div>
           ${dest?`<div class="row-sub">${dest}</div>`:''}
@@ -628,6 +669,7 @@ function renderPayPeriod(){
         <div class="row-right">
           <div class="row-amt">${money(a.amount)}</div>
           <div class="rpills">
+            <button class="pill pill-success pill-sm" onclick="toggleAllocDone('${a.id}',true)">Completed</button>
             <button class="pill pill-ghost pill-sm" onclick="openAddAlloc('${a.id}')">Edit</button>
             <button class="pill pill-danger pill-sm" onclick="deleteAlloc('${a.id}')">✕</button>
           </div>
@@ -648,15 +690,16 @@ function renderPayPeriod(){
           const acct=(D.personal.accounts||[]).find(x=>x.id===a.destination);
           const dest=a.destination==='cash'?'Cash':acct?esc(acct.name):'';
           h+=`<div class="row center" style="opacity:.45;background:var(--bg)">
-            <input type="checkbox" checked onchange="toggleAllocDone('${a.id}',this.checked)"
-              style="width:17px;height:17px;flex-shrink:0;accent-color:var(--lav);cursor:pointer">
             <div class="row-main">
               <div class="row-name" style="text-decoration:line-through">${esc(a.label)}</div>
               ${dest?`<div class="row-sub">${dest}</div>`:''}
             </div>
             <div class="row-right">
               <div class="row-amt dim">${money(a.amount)}</div>
-              <button class="pill pill-danger pill-sm" onclick="deleteAlloc('${a.id}')">✕</button>
+              <div class="rpills">
+                <button class="pill pill-ghost pill-sm" onclick="toggleAllocDone('${a.id}',false)">Undo</button>
+                <button class="pill pill-danger pill-sm" onclick="deleteAlloc('${a.id}')">✕</button>
+              </div>
             </div>
           </div>`;
         });
