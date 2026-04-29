@@ -731,7 +731,7 @@ function openAssignBills(fundId){
   const f=(D.personal.funds||[]).find(x=>x.id===fundId);if(!f)return;
   const assignedIds=(f.bills||[]).map(b=>b.billId);
   const bills=D.personal.bills||[];
-  const available=bills.filter(b=>!assignedIds.includes(b.id)).sort((a,b)=>(a.due||'9999').localeCompare(b.due||'9999'));
+  const available=bills.filter(b=>!assignedIds.includes(b.id)&&!b.paid).sort((a,b)=>(a.due||'9999').localeCompare(b.due||'9999'));
   if(!available.length){showSheet('Assign Bills','<div class="empty">All bills are already assigned to this check, or you have no bills set up.</div><div class="form-btns"><button class="pill pill-ghost pill-full" onclick="closeSheet()">Close</button></div>');return;}
   let body='<div style="font-size:12px;color:var(--ink2);margin-bottom:14px;line-height:1.6">Select which bills this paycheck will cover.</div>';
   body+=`<div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;max-height:45vh;overflow-y:auto;-webkit-overflow-scrolling:touch">`;
