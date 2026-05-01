@@ -325,14 +325,15 @@ function fv(id){const e=document.getElementById(id);return e?e.value:'';}
 function fc(id){const e=document.getElementById(id);return e?e.checked:false;}
 function selOpts(arr,sel){return arr.map(o=>`<option value="${esc(o)}"${o===sel?' selected':''}>${esc(o)}</option>`).join('');}
 
+function todayMidnight(){const d=new Date();d.setHours(0,0,0,0);return d;}
 function dueStatus(d){
   if(!d)return'gray';
-  const diff=(new Date(d+'T00:00:00')-new Date())/86400000;
+  const diff=(new Date(d+'T00:00:00')-todayMidnight())/86400000;
   return diff<0?'rose':diff<=5?'amber':'mint';
 }
 function dueLabel(d){
   if(!d)return'';
-  const diff=Math.round((new Date(d+'T00:00:00')-new Date())/86400000);
+  const diff=Math.round((new Date(d+'T00:00:00')-todayMidnight())/86400000);
   if(diff<0)return Math.abs(diff)+'d overdue';
   if(diff===0)return'Due today';
   if(diff===1)return'Due tomorrow';
@@ -348,7 +349,7 @@ function autoResetRecurringBills(){
   let changed=false;
   (D.personal.bills||[]).forEach(b=>{
     if(!b.recurring||!b.due)return;
-    const isPast=(new Date(b.due+'T00:00:00')-new Date())/86400000<0;
+    const isPast=(new Date(b.due+'T00:00:00')-todayMidnight())/86400000<0;
     if(isPast&&b.paid){
       const d=new Date(b.due+'T00:00:00');
       d.setMonth(d.getMonth()+1);
@@ -389,7 +390,7 @@ function ppWindowBills(pp){
 function overdueBills(){
   return(D.personal.bills||[]).filter(b=>{
     if(b.paid||!b.due)return false;
-    return(new Date(b.due+'T00:00:00')-new Date())/86400000<0;
+    return(new Date(b.due+'T00:00:00')-todayMidnight())/86400000<0;
   }).sort((a,b)=>(a.due||'').localeCompare(b.due||''));
 }
 
