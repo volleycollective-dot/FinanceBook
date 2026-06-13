@@ -853,7 +853,7 @@ function renderBills(){
   </div>`;
 
   if(_billsTab==='recurring'){
-    const recurring=[...bills].filter(b=>b.recurring).sort((a,b)=>(a.due||'9999').localeCompare(b.due||'9999'));
+    const recurring=[...bills].filter(b=>b.recurring).sort((a,b)=>{const da=parseInt((a.due||'').slice(8,10))||99;const db=parseInt((b.due||'').slice(8,10))||99;return da-db;});
     if(!recurring.length){
       h+=`<div class="empty">No recurring bills yet.<br>Edit a bill and check "Repeats every month" to add one.</div>`;
     }else{
