@@ -843,7 +843,7 @@ function renderBills(){
   const bills=D.personal.bills;
   const unpaid=[...bills].filter(b=>!b.paid).sort((a,b)=>(a.due||'9999').localeCompare(b.due||'9999'));
   const mo=today().slice(0,7);
-  const paid=bills.filter(b=>b.paid&&b.paidDate&&b.paidDate.startsWith(mo));
+  const paid=bills.filter(b=>b.paid&&(!b.paidDate||b.paidDate.startsWith(mo)));
   let h=back()+`<div class="pg-hd"><div class="pg-title">Bills</div><button class="pill pill-primary" onclick="openSheet('bill')">+ Add bill</button></div>`;
   if(!bills.length)return h+`<div class="empty"><div style="font-size:32px;margin-bottom:10px">🧾</div>No bills yet.<br>Tap <strong>+ Add bill</strong> to start.</div>`;
   if(unpaid.length){
