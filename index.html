@@ -345,15 +345,22 @@ function dueLabel(d){
 // paid + past due → advance date + flip to unpaid
 // unpaid + past due → leave alone (stays overdue)
 // ─────────────────────────────────────────────
+function addOneMonth(dateStr){
+  const d=new Date(dateStr+'T00:00:00');
+  const day=d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth()+1);
+  const lastDay=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
+  d.setDate(Math.min(day,lastDay));
+  return d.toISOString().slice(0,10);
+}
 function autoResetRecurringBills(){
   let changed=false;
   (D.personal.bills||[]).forEach(b=>{
     if(!b.recurring||!b.due)return;
     const isPast=(new Date(b.due+'T00:00:00')-todayMidnight())/86400000<0;
     if(isPast&&b.paid){
-      const d=new Date(b.due+'T00:00:00');
-      d.setMonth(d.getMonth()+1);
-      b.due=d.toISOString().slice(0,10);
+      b.due=addOneMonth(b.due);
       b.paid=false;b.paidDate='';
       changed=true;
     }
@@ -424,9 +431,6 @@ function renderHome(){
   const totalIn=(pp.income||[]).reduce((s,i)=>s+n(i.amount),0);
   const committedAmt=p.bills.filter(b=>(pp.committedBills||[]).includes(b.id)).reduce((s,b)=>s+n(b.amount),0);
   const allocAmt=(pp.allocations||[]).reduce((s,a)=>s+n(a.amount),0);
-  const unalloc=totalIn-committedAmt-allocAmt;
-  const mo=today().slice(0,7);
-  const moIncome=p.income.filter(i=>i.date&&i.date.startsWith(mo)).reduce((s,i)=>s+n(i.amount),0);
 
   let h=`<div style="margin-bottom:18px">
     <div style="font-size:20px;font-weight:800;letter-spacing:-.03em">Hi, Rian</div>
@@ -701,7 +705,7 @@ function openAddFund(){
   const opts=accounts.map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('');
   showSheet('Add Income',`
     <div class="field"><label>Label</label><input type="text" id="f-lbl" placeholder="e.g. Andrew - SGWS, Rian - VolleySeries"></div>
-    <div class="field"><label>Amount</label><input type="number" inputmode="decimal" id="f-amt" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+    <div class="field"><label>Amount</label><input type="number" inputmode="decimal" id="f-amt" step="0.01" placeholder="0.00"></div>
     <div class="field"><label>Date received</label><input type="date" id="f-date" value="${today()}"></div>
     <div class="field"><label>Deposited into</label><select id="f-acct"><option value="">Select account (optional)...</option>${opts}</select></div>
     <div class="form-btns"><button class="pill pill-primary pill-full" onclick="saveFund()">Save</button></div>`);
@@ -728,7 +732,7 @@ function openEditFund(id){
   const opts=accounts.map(a=>`<option value="${esc(a.id)}"${f.accountId===a.id?' selected':''}>${esc(a.name)}</option>`).join('');
   showSheet('Edit Income',`
     <div class="field"><label>Label</label><input type="text" id="f-lbl" value="${esc(f.label)}"></div>
-    <div class="field"><label>Amount</label><input type="number" inputmode="decimal" id="f-amt" step="0.01" inputmode="decimal" value="${f.amount}"></div>
+    <div class="field"><label>Amount</label><input type="number" inputmode="decimal" id="f-amt" step="0.01" value="${f.amount}"></div>
     <div class="field"><label>Date received</label><input type="date" id="f-date" value="${f.date||today()}"></div>
     <div class="field"><label>Deposited into</label><select id="f-acct"><option value="">Select account (optional)...</option>${opts}</select></div>
     <div class="form-btns">
@@ -810,7 +814,7 @@ function openAddFundAlloc(fundId){
       <div style="font-size:22px;font-weight:700;color:${over?'var(--rose-dk)':'var(--lav-dk)'}">${money(available)}</div>
     </div>
     <div class="field"><label>Label</label><input type="text" id="al-lbl" placeholder="e.g. Gas money, Groceries, Savings"></div>
-    <div class="field"><label>Amount</label><input type="number" inputmode="decimal" id="al-amt" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+    <div class="field"><label>Amount</label><input type="number" inputmode="decimal" id="al-amt" step="0.01" placeholder="0.00"></div>
     <div class="field"><label>Move to</label><select id="al-dest"><option value="">Pick destination (optional)...</option><option value="cash">Cash</option>${opts}</select></div>
     <div class="form-btns"><button class="pill pill-primary pill-full" onclick="saveFundAlloc('${fundId}')">Save</button></div>`);
 }
@@ -838,7 +842,8 @@ function toggleFundAllocDone(fundId,allocId,done){
 function renderBills(){
   const bills=D.personal.bills;
   const unpaid=[...bills].filter(b=>!b.paid).sort((a,b)=>(a.due||'9999').localeCompare(b.due||'9999'));
-  const paid=bills.filter(b=>b.paid);
+  const mo=today().slice(0,7);
+  const paid=bills.filter(b=>b.paid&&b.paidDate&&b.paidDate.startsWith(mo));
   let h=back()+`<div class="pg-hd"><div class="pg-title">Bills</div><button class="pill pill-primary" onclick="openSheet('bill')">+ Add bill</button></div>`;
   if(!bills.length)return h+`<div class="empty"><div style="font-size:32px;margin-bottom:10px">🧾</div>No bills yet.<br>Tap <strong>+ Add bill</strong> to start.</div>`;
   if(unpaid.length){
@@ -857,7 +862,7 @@ function renderBills(){
     });h+=`</div>`;
   }
   if(paid.length){
-    h+=`<div class="sec-lbl">Paid this cycle</div><div class="card">`;
+    h+=`<div class="sec-lbl">Paid this month</div><div class="card">`;
     paid.forEach(b=>{
       h+=`<div class="row" style="opacity:.5"><div class="dot mint"></div>
         <div class="row-main"><div class="row-name">${esc(b.name)}</div>
@@ -1337,12 +1342,12 @@ function renderVSCalc(){
   h+=`<div class="sec-lbl">Event calculator</div>
   <div class="box" style="margin-bottom:14px">
     <div class="field-row" style="margin-bottom:12px">
-      <div class="field" style="margin:0"><label>Entry fees collected</label><input type="number" inputmode="decimal" id="vs-rev" step="0.01" inputmode="decimal" placeholder="0.00" oninput="calcVS()"></div>
-      <div class="field" style="margin:0"><label>Event costs</label><input type="number" inputmode="decimal" id="vs-cost" step="0.01" inputmode="decimal" placeholder="0.00" oninput="calcVS()"></div>
+      <div class="field" style="margin:0"><label>Entry fees collected</label><input type="number" inputmode="decimal" id="vs-rev" step="0.01" placeholder="0.00" oninput="calcVS()"></div>
+      <div class="field" style="margin:0"><label>Event costs</label><input type="number" inputmode="decimal" id="vs-cost" step="0.01" placeholder="0.00" oninput="calcVS()"></div>
     </div>
     <div class="field-row" style="margin-bottom:0">
-      <div class="field" style="margin:0"><label>Winner payouts</label><input type="number" inputmode="decimal" id="vs-pay" step="0.01" inputmode="decimal" placeholder="0.00" oninput="calcVS()"></div>
-      <div class="field" style="margin:0"><label># of Teams</label><input type="number" inputmode="decimal" id="vs-teams" inputmode="numeric" placeholder="e.g. 15" oninput="calcVS()"></div>
+      <div class="field" style="margin:0"><label>Winner payouts</label><input type="number" inputmode="decimal" id="vs-pay" step="0.01" placeholder="0.00" oninput="calcVS()"></div>
+      <div class="field" style="margin:0"><label># of Teams</label><input type="number" inputmode="numeric" id="vs-teams" placeholder="e.g. 15" oninput="calcVS()"></div>
     </div>
     <div id="vs-results"></div>
   </div>`;
@@ -1435,7 +1440,7 @@ function logVSEvent(rev,cost,pay,profit,teams){
       if(!D.volleyco.scholarLedger)D.volleyco.scholarLedger=[];
       D.volleyco.scholarLedger.push({id:uid(),date:dt,amount:amt,notes:name+' — VolleySeries split'});
       save('vc_scholar');
-      D.volleyco.transactions.push({id:uid(),date:dt,amount:-amt,paidHow:'Internal Transfer',category:'VolleyScholar Transfer',notes:name+' — VolleyScholar 30%'});
+      D.volleyco.transactions.push({id:uid(),date:dt,amount:-amt,paidHow:'Internal Transfer',category:'VolleyScholar Transfer',notes:name+' — VolleyScholar '+sch.pct+'%'});
     }
   }
   save('vc_transactions');
@@ -1518,26 +1523,26 @@ function openSheet(type,extra){
   const t=today();
   const forms={
     bill:`<div class="field"><label>Bill name</label><input id="f-name" type="text" placeholder="e.g. Mortgage, Netflix"></div>
-      <div class="field-row"><div class="field"><label>Amount</label><input id="f-amount" type="number" inputmode="decimal" step="0.01" inputmode="decimal" placeholder="0.00"></div><div class="field"><label>Due date</label><input id="f-due" type="date" value="${t}"></div></div>
-      <div class="field-row"><div class="field"><label>Grace period (days)</label><input id="f-grace" type="number" inputmode="decimal" min="0" max="30" inputmode="numeric" placeholder="e.g. 14"></div><div class="field"><label>Category</label><input id="f-cat" type="text" placeholder="Housing, Utilities…"></div></div>
+      <div class="field-row"><div class="field"><label>Amount</label><input id="f-amount" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div><div class="field"><label>Due date</label><input id="f-due" type="date" value="${t}"></div></div>
+      <div class="field-row"><div class="field"><label>Grace period (days)</label><input id="f-grace" type="number" inputmode="numeric" min="0" max="30" placeholder="e.g. 14"></div><div class="field"><label>Category</label><input id="f-cat" type="text" placeholder="Housing, Utilities…"></div></div>
       <div class="field-check"><input type="checkbox" id="f-rec"> Repeats every month</div>
       <div class="form-btns"><button class="pill pill-primary pill-full" onclick="saveBill()">Save bill</button></div>`,
     debt:`<div class="field"><label>Name</label><input id="f-name" type="text" placeholder="e.g. Chase Sapphire"></div>
       <div class="field"><label>Type</label><select id="f-type">${selOpts(DEBT_TYPES)}</select></div>
-      <div class="field-row"><div class="field"><label>Current balance</label><input id="f-balance" type="number" inputmode="decimal" step="0.01" inputmode="decimal" placeholder="0.00"></div><div class="field"><label>Original balance</label><input id="f-orig" type="number" inputmode="decimal" step="0.01" inputmode="decimal" placeholder="0.00"></div></div>
+      <div class="field-row"><div class="field"><label>Current balance</label><input id="f-balance" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div><div class="field"><label>Original balance</label><input id="f-orig" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div></div>
       <div class="field-row"><div class="field"><label>Interest rate (%)</label><input id="f-rate" type="number" inputmode="decimal" step="0.01" placeholder="e.g. 24.99"></div><div class="field"><label>Min payment/mo</label><input id="f-min" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div></div>
-      <div class="field"><label>Due day of month</label><input id="f-day" type="number" inputmode="decimal" min="1" max="31" inputmode="numeric" placeholder="e.g. 15"></div>
+      <div class="field"><label>Due day of month</label><input id="f-day" type="number" inputmode="numeric" min="1" max="31" placeholder="e.g. 15"></div>
       <div class="form-btns"><button class="pill pill-primary pill-full" onclick="saveDebt()">Save debt</button></div>`,
     account:`<div class="field"><label>Account name</label><input id="f-name" type="text" placeholder="e.g. Wells Fargo Checking"></div>
       <div class="field"><label>Type</label><select id="f-type">${selOpts(ACCT_TYPES)}</select></div>
-      <div class="field"><label>Current balance</label><input id="f-balance" type="number" inputmode="decimal" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+      <div class="field"><label>Current balance</label><input id="f-balance" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div>
       <div class="form-btns"><button class="pill pill-primary pill-full" onclick="saveAccount('${extra||'personal'}')">Save account</button></div>`,
-    income:`<div class="field-row"><div class="field"><label>Date</label><input id="f-date" type="date" value="${t}"></div><div class="field"><label>Amount</label><input id="f-amount" type="number" inputmode="decimal" step="0.01" inputmode="decimal" placeholder="0.00"></div></div>
+    income:`<div class="field-row"><div class="field"><label>Date</label><input id="f-date" type="date" value="${t}"></div><div class="field"><label>Amount</label><input id="f-amount" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div></div>
       <div class="field"><label>Source</label><input id="f-source" type="text" placeholder="e.g. Paycheck, Coaching, VolleySeries"></div>
       <div class="field"><label>Notes (optional)</label><input id="f-notes" type="text" placeholder=""></div>
       <div class="form-btns"><button class="pill pill-primary pill-full" onclick="saveIncome()">Save</button></div>`,
     tx:`<div class="field"><label>Date</label><input id="f-date" type="date" value="${t}"></div>
-      <div class="field"><label>Amount (negative = expense)</label><input id="f-amount" type="number" inputmode="decimal" step="0.01" inputmode="decimal" placeholder="e.g. 150 or -44.59"></div>
+      <div class="field"><label>Amount (negative = expense)</label><input id="f-amount" type="number" inputmode="decimal" step="0.01" placeholder="e.g. 150 or -44.59"></div>
       <div class="field"><label>Paid how</label><select id="f-how"><option value="">Select...</option>${selOpts(PAY_HOW)}</select></div>
       <div class="field"><label>Category</label><select id="f-cat">${selOpts(CAT_VC)}</select></div>
       <div class="field"><label>Notes</label><input id="f-notes" type="text" placeholder="Description..."></div>
@@ -1605,7 +1610,7 @@ function toggleBillCommit(id,checked){const pp=getPP();if(checked){if(!pp.commit
 function saveDebt(){const name=fv('f-name').trim();if(!name)return alert('Enter a name.');const bal=n(fv('f-balance'));D.personal.debts.push({id:uid(),name,type:fv('f-type'),balance:bal,originalBalance:n(fv('f-orig'))||bal,rate:fv('f-rate'),minPayment:n(fv('f-min')),dueDay:fv('f-day')});save('p_debts');closeSheet();render();}
 function updateDebt(id){const d=D.personal.debts.find(x=>x.id===id);if(!d)return;d.name=fv('f-name').trim();d.type=fv('f-type');d.balance=n(fv('f-balance'));d.originalBalance=n(fv('f-orig'))||d.balance;d.rate=fv('f-rate');d.minPayment=n(fv('f-min'));d.dueDay=fv('f-day');save('p_debts');closeSheet();render();}
 function deleteDebt(id){if(!confirm('Delete this debt?'))return;D.personal.debts=D.personal.debts.filter(x=>x.id!==id);save('p_debts');render();}
-function makePayment(id){const d=D.personal.debts.find(x=>x.id===id);if(!d)return;showSheet('Make Payment',`<div style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--ink)">${esc(d.name)}<span style="font-size:12px;font-weight:500;color:var(--ink2);margin-left:8px">Balance: ${money(d.balance)}</span></div><div class="field"><label>Payment amount</label><input id="pay-amt" type="number" inputmode="decimal" step="0.01" inputmode="decimal" placeholder="0.00"></div><div class="form-btns"><button class="pill pill-primary pill-full" onclick="submitPayment('${id}')">Apply payment</button></div>`);}
+function makePayment(id){const d=D.personal.debts.find(x=>x.id===id);if(!d)return;showSheet('Make Payment',`<div style="font-size:15px;font-weight:700;margin-bottom:16px;color:var(--ink)">${esc(d.name)}<span style="font-size:12px;font-weight:500;color:var(--ink2);margin-left:8px">Balance: ${money(d.balance)}</span></div><div class="field"><label>Payment amount</label><input id="pay-amt" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div><div class="form-btns"><button class="pill pill-primary pill-full" onclick="submitPayment('${id}')">Apply payment</button></div>`);}
 function submitPayment(id){const d=D.personal.debts.find(x=>x.id===id);if(!d)return;const amt=parseFloat(document.getElementById('pay-amt').value);if(!amt||isNaN(amt))return alert('Enter an amount.');d.balance=Math.max(0,n(d.balance)-amt);save('p_debts');closeSheet();render();}
 
 function saveAccount(sec){const name=fv('f-name').trim();if(!name)return alert('Enter an account name.');if(!D[sec].accounts)D[sec].accounts=[];D[sec].accounts.push({id:uid(),name,type:fv('f-type'),balance:n(fv('f-balance'))});save(sec==='personal'?'p_accounts':'vc_accounts');closeSheet();render();}
@@ -1622,7 +1627,7 @@ function deleteTx(id){D.volleyco.transactions=(D.volleyco.transactions||[]).filt
 
 function scholarEntry(dir){
   showSheet(dir>0?'Add Deposit':'Record Disbursement',`
-    <div class="field"><label>Amount</label><input id="sch-amt" type="number" inputmode="decimal" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+    <div class="field"><label>Amount</label><input id="sch-amt" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div>
     <div class="field"><label>Date</label><input id="sch-date" type="date" value="${today()}"></div>
     <div class="field"><label>Notes</label><input id="sch-notes" type="text" placeholder="${dir>0?'e.g. VolleySeries Feb 22':'e.g. Scholarship award'}"></div>
     <div class="form-btns"><button class="pill pill-primary pill-full" onclick="submitScholarEntry(${dir})">Save</button></div>`);
@@ -1642,7 +1647,7 @@ function deleteScholar(id){D.volleyco.scholarLedger=(D.volleyco.scholarLedger||[
 function updateTaxSaved(){
   showSheet('Update Tax Set Aside',`
     <div style="font-size:12px;color:var(--ink2);margin-bottom:16px;line-height:1.6">Cash saved outside of transactions — e.g. money moved to a separate account manually.</div>
-    <div class="field"><label>Amount set aside</label><input id="tax-amt" type="number" inputmode="decimal" step="0.01" inputmode="decimal" placeholder="0.00" value="${D.volleyco.taxSaved||0}"></div>
+    <div class="field"><label>Amount set aside</label><input id="tax-amt" type="number" inputmode="decimal" step="0.01" placeholder="0.00" value="${D.volleyco.taxSaved||0}"></div>
     <div class="form-btns"><button class="pill pill-primary pill-full" onclick="submitTaxSaved()">Save</button></div>`);
 }
 function submitTaxSaved(){const v=parseFloat(document.getElementById('tax-amt').value);if(isNaN(v))return alert('Enter a valid amount.');D.volleyco.taxSaved=v;save('vc_tax_saved');closeSheet();render();}
@@ -1664,7 +1669,7 @@ function openAddPPIncome(){
   const opts=accounts.length?accounts.map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join(''):'<option value="">No accounts yet</option>';
   showSheet('Add Income',`
     <div class="field"><label>Label</label><input type="text" id="pp-lbl" placeholder="e.g. Andrew - SGWS, Andrew - Car check, Rian - VolleySeries"></div>
-    <div class="field"><label>Amount</label><input type="number" inputmode="decimal" id="pp-amt" step="0.01" inputmode="decimal" placeholder="0.00"></div>
+    <div class="field"><label>Amount</label><input type="number" inputmode="decimal" id="pp-amt" step="0.01" placeholder="0.00"></div>
     <div class="field"><label>Deposited into</label><select id="pp-acct"><option value="">Select account...</option>${opts}</select></div>
     <div class="field"><label>Date</label><input type="date" id="pp-date" value="${today()}"></div>
     <div class="form-btns"><button class="pill pill-primary pill-full" onclick="savePPIncome()">Save</button></div>`);
@@ -1702,7 +1707,7 @@ function openAddAlloc(editId){
       <div style="font-size:22px;font-weight:700;color:${over?'var(--rose-dk)':'var(--lav-dk)'}">${money(available)}</div>
     </div>
     <div class="field"><label>Label</label><input type="text" id="al-lbl" placeholder="e.g. Groceries (debit), Andrew gas, Savings" value="${a?esc(a.label):''}"></div>
-    <div class="field"><label>Amount</label><input type="number" inputmode="decimal" id="al-amt" step="0.01" inputmode="decimal" placeholder="0.00" value="${a?a.amount:''}"></div>
+    <div class="field"><label>Amount</label><input type="number" inputmode="decimal" id="al-amt" step="0.01" placeholder="0.00" value="${a?a.amount:''}"></div>
     <div class="field"><label>Goes to</label><select id="al-dest"><option value="">Pick destination...</option><option value="cash"${a&&a.destination==='cash'?' selected':''}>Cash</option>${opts}</select></div>
     <div class="form-btns">
       <button class="pill pill-primary" style="flex:2;padding:11px;font-size:13px" onclick="${a?`updateAlloc('${editId}')`:'saveAlloc()'}">${a?'Save changes':'Save'}</button>
