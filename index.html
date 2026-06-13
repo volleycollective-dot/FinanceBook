@@ -253,6 +253,7 @@ const KEYS={
 // In-memory UI state (resets on navigate)
 let _showDoneAllocs=false;
 let _openFundId=null;
+let _billsTab='all'; // 'all' | 'recurring'
 function localLoad(){Object.keys(KEYS).forEach(k=>{const v=localStorage.getItem('hf_'+k);if(v)try{D[KEYS[k][0]][KEYS[k][1]]=JSON.parse(v);}catch(e){}});}
 async function remoteLoad(){
   if(!sb)return;
@@ -308,7 +309,7 @@ function closeSheet(){
 // ─────────────────────────────────────────────
 let NAV={sec:'personal',screen:'home'};
 function switchSec(sec){NAV.sec=sec;NAV.screen=sec==='personal'?'home':'overview';document.getElementById('sec-sel').value=sec;render();}
-function go(s){NAV.screen=s;_showDoneAllocs=false;_openFundId=null;render();}
+function go(s){NAV.screen=s;_showDoneAllocs=false;_openFundId=null;_billsTab='all';render();}
 function goHome(){go(NAV.sec==='personal'?'home':'overview');}
 function back(lbl){return`<button class="back" onclick="goHome()">← ${lbl||'Home'}</button>`;}
 function backTo(s,lbl){return`<button class="back" onclick="go('${s}')">← ${lbl}</button>`;}
@@ -841,38 +842,73 @@ function toggleFundAllocDone(fundId,allocId,done){
 // ─────────────────────────────────────────────
 function renderBills(){
   const bills=D.personal.bills;
-  const unpaid=[...bills].filter(b=>!b.paid).sort((a,b)=>(a.due||'9999').localeCompare(b.due||'9999'));
   const mo=today().slice(0,7);
-  const paid=bills.filter(b=>b.paid&&(!b.paidDate||b.paidDate.startsWith(mo)));
   let h=back()+`<div class="pg-hd"><div class="pg-title">Bills</div><button class="pill pill-primary" onclick="openSheet('bill')">+ Add bill</button></div>`;
   if(!bills.length)return h+`<div class="empty"><div style="font-size:32px;margin-bottom:10px">🧾</div>No bills yet.<br>Tap <strong>+ Add bill</strong> to start.</div>`;
-  if(unpaid.length){
-    h+=`<div class="sec-lbl">Unpaid (${unpaid.length})</div><div class="card">`;
-    unpaid.forEach(b=>{
-      const s=dueStatus(b.due);
-      h+=`<div class="row"><div class="dot ${s}"></div>
-        <div class="row-main"><div class="row-name">${esc(b.name)} ${b.recurring?'<span class="badge">monthly</span>':''}</div>
-        <div class="row-sub ${s==='rose'?'urgent':s==='amber'?'soon':''}">${dueLabel(b.due)}${b.grace?' · '+b.grace+'d grace':''}</div></div>
-        <div class="row-right"><div class="row-amt">${money(b.amount)}</div>
-        <div class="rpills">
-          <button class="pill pill-success pill-sm" onclick="markPaid('${b.id}')">Paid</button>
-          <button class="pill pill-ghost pill-sm" onclick="openSheet('bill-edit','${b.id}')">Edit</button>
-          <button class="pill pill-danger pill-sm" onclick="deleteBill('${b.id}')">Delete</button>
-        </div></div></div>`;
-    });h+=`</div>`;
-  }
-  if(paid.length){
-    h+=`<div class="sec-lbl">Paid this month</div><div class="card">`;
-    paid.forEach(b=>{
-      h+=`<div class="row" style="opacity:.5"><div class="dot mint"></div>
-        <div class="row-main"><div class="row-name">${esc(b.name)}</div>
-        <div class="row-sub" style="color:var(--mint-dk)">Paid ${b.paidDate||''}</div></div>
-        <div class="row-right"><div class="row-amt dim">${money(b.amount)}</div>
-        <div class="rpills">
-          <button class="pill pill-ghost pill-sm" onclick="markUnpaid('${b.id}')">Undo</button>
-          <button class="pill pill-danger pill-sm" onclick="deleteBill('${b.id}')">Delete</button>
-        </div></div></div>`;
-    });h+=`</div>`;
+
+  // Tab toggle
+  h+=`<div class="toggle-wrap" style="margin-bottom:16px">
+    <button class="toggle-btn${_billsTab==='all'?' on':''}" onclick="_billsTab='all';render()">All bills</button>
+    <button class="toggle-btn${_billsTab==='recurring'?' on':''}" onclick="_billsTab='recurring';render()">Monthly</button>
+  </div>`;
+
+  if(_billsTab==='recurring'){
+    const recurring=[...bills].filter(b=>b.recurring).sort((a,b)=>(a.due||'9999').localeCompare(b.due||'9999'));
+    if(!recurring.length){
+      h+=`<div class="empty">No recurring bills yet.<br>Edit a bill and check "Repeats every month" to add one.</div>`;
+    }else{
+      const totalMonthly=recurring.reduce((s,b)=>s+n(b.amount),0);
+      h+=`<div class="tiles" style="margin-bottom:14px">
+        <div class="tile"><div class="tile-label">Recurring bills</div><div class="tile-val">${recurring.length}</div></div>
+        <div class="tile"><div class="tile-label">Monthly total</div><div class="tile-val c-rose">${money(totalMonthly)}</div></div>
+      </div>`;
+      h+=`<div class="card">`;
+      recurring.forEach(b=>{
+        const s=b.paid?'mint':dueStatus(b.due);
+        h+=`<div class="row"><div class="dot ${s}"></div>
+          <div class="row-main"><div class="row-name">${esc(b.name)}</div>
+          <div class="row-sub ${!b.paid&&s==='rose'?'urgent':!b.paid&&s==='amber'?'soon':''}">${b.paid?`Paid ${b.paidDate||''}`:dueLabel(b.due)||'No due date'}${b.grace&&!b.paid?' · '+b.grace+'d grace':''}</div></div>
+          <div class="row-right"><div class="row-amt ${b.paid?'dim':''}">${money(b.amount)}</div>
+          <div class="rpills">
+            ${b.paid
+              ?`<button class="pill pill-ghost pill-sm" onclick="markUnpaid('${b.id}')">Undo</button>`
+              :`<button class="pill pill-success pill-sm" onclick="markPaid('${b.id}')">Paid</button>`}
+            <button class="pill pill-ghost pill-sm" onclick="openSheet('bill-edit','${b.id}')">Edit</button>
+          </div></div></div>`;
+      });
+      h+=`</div>`;
+    }
+  }else{
+    const unpaid=[...bills].filter(b=>!b.paid).sort((a,b)=>(a.due||'9999').localeCompare(b.due||'9999'));
+    const paid=bills.filter(b=>b.paid&&(!b.paidDate||b.paidDate.startsWith(mo)));
+    if(unpaid.length){
+      h+=`<div class="sec-lbl">Unpaid (${unpaid.length})</div><div class="card">`;
+      unpaid.forEach(b=>{
+        const s=dueStatus(b.due);
+        h+=`<div class="row"><div class="dot ${s}"></div>
+          <div class="row-main"><div class="row-name">${esc(b.name)} ${b.recurring?'<span class="badge">monthly</span>':''}</div>
+          <div class="row-sub ${s==='rose'?'urgent':s==='amber'?'soon':''}">${dueLabel(b.due)}${b.grace?' · '+b.grace+'d grace':''}</div></div>
+          <div class="row-right"><div class="row-amt">${money(b.amount)}</div>
+          <div class="rpills">
+            <button class="pill pill-success pill-sm" onclick="markPaid('${b.id}')">Paid</button>
+            <button class="pill pill-ghost pill-sm" onclick="openSheet('bill-edit','${b.id}')">Edit</button>
+            <button class="pill pill-danger pill-sm" onclick="deleteBill('${b.id}')">Delete</button>
+          </div></div></div>`;
+      });h+=`</div>`;
+    }
+    if(paid.length){
+      h+=`<div class="sec-lbl">Paid this month</div><div class="card">`;
+      paid.forEach(b=>{
+        h+=`<div class="row" style="opacity:.5"><div class="dot mint"></div>
+          <div class="row-main"><div class="row-name">${esc(b.name)}</div>
+          <div class="row-sub" style="color:var(--mint-dk)">Paid ${b.paidDate||''}</div></div>
+          <div class="row-right"><div class="row-amt dim">${money(b.amount)}</div>
+          <div class="rpills">
+            <button class="pill pill-ghost pill-sm" onclick="markUnpaid('${b.id}')">Undo</button>
+            <button class="pill pill-danger pill-sm" onclick="deleteBill('${b.id}')">Delete</button>
+          </div></div></div>`;
+      });h+=`</div>`;
+    }
   }
   h+=personalQuickLinks();
   return h;
