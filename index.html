@@ -325,6 +325,7 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 function fv(id){const e=document.getElementById(id);return e?e.value:'';}
 function fc(id){const e=document.getElementById(id);return e?e.checked:false;}
 function selOpts(arr,sel){return arr.map(o=>`<option value="${esc(o)}"${o===sel?' selected':''}>${esc(o)}</option>`).join('');}
+function byName(arr){return [...(arr||[])].sort((a,b)=>(a.name||'').localeCompare(b.name||'',undefined,{sensitivity:'base'}));}
 
 function todayMidnight(){const d=new Date();d.setHours(0,0,0,0);return d;}
 function dueStatus(d){
@@ -703,7 +704,7 @@ function renderFunds(){
 
 function openAddFund(){
   const accounts=D.personal.accounts||[];
-  const opts=accounts.map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('');
+  const opts=byName(accounts).map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('');
   showSheet('Add Income',`
     <div class="field"><label>Label</label><input type="text" id="f-lbl" placeholder="e.g. Andrew - SGWS, Rian - VolleySeries"></div>
     <div class="field"><label>Amount</label><input type="number" inputmode="decimal" id="f-amt" step="0.01" placeholder="0.00"></div>
@@ -730,7 +731,7 @@ function saveFund(){
 function openEditFund(id){
   const f=(D.personal.funds||[]).find(x=>x.id===id);if(!f)return;
   const accounts=D.personal.accounts||[];
-  const opts=accounts.map(a=>`<option value="${esc(a.id)}"${f.accountId===a.id?' selected':''}>${esc(a.name)}</option>`).join('');
+  const opts=byName(accounts).map(a=>`<option value="${esc(a.id)}"${f.accountId===a.id?' selected':''}>${esc(a.name)}</option>`).join('');
   showSheet('Edit Income',`
     <div class="field"><label>Label</label><input type="text" id="f-lbl" value="${esc(f.label)}"></div>
     <div class="field"><label>Amount</label><input type="number" inputmode="decimal" id="f-amt" step="0.01" value="${f.amount}"></div>
@@ -808,7 +809,7 @@ function openAddFundAlloc(fundId){
   const available=n(f.amount)-billsAmt-allocsAmt;
   const over=available<-0.01;
   const accounts=D.personal.accounts||[];
-  const opts=accounts.map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('');
+  const opts=byName(accounts).map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('');
   showSheet('Move Money',`
     <div style="background:${over?'var(--rose-lt)':'var(--lav-lt)'};border-radius:10px;padding:12px 14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
       <div style="font-size:11px;font-weight:700;color:${over?'var(--rose-dk)':'var(--lav-dk)'};text-transform:uppercase;letter-spacing:.08em">Available</div>
@@ -1257,8 +1258,9 @@ function renderTransactions(){
     h+=`<div class="card">`;
     grouped[mo].forEach(t=>{
       const amt=n(t.amount);
+      const acctName=t.accountId?((D.volleyco.accounts||[]).find(a=>a.id===t.accountId)||{}).name:'';
       h+=`<div class="row center"><div class="row-main"><div class="row-name">${esc(t.notes||t.category||'Transaction')}</div>
-      <div class="row-sub">${t.date||''}${t.paidHow?' · '+esc(t.paidHow):''}${t.category?' · '+esc(t.category):''}</div></div>
+      <div class="row-sub">${t.date||''}${t.paidHow?' · '+esc(t.paidHow):''}${t.category?' · '+esc(t.category):''}${acctName?' · '+esc(acctName):''}</div></div>
       <div class="row-right"><div class="row-amt ${amt>=0?'pos':'neg'}">${amt>=0?'+':''}${money(amt)}</div>
       <div class="rpills"><button class="pill pill-ghost pill-sm" onclick="openSheet('tx-edit','${t.id}')">Edit</button><button class="pill pill-danger pill-sm" onclick="deleteTx('${t.id}')">Delete</button></div>
       </div></div>`;
@@ -1543,10 +1545,10 @@ function doExport(mode){
 // ─────────────────────────────────────────────
 // SHEET / FORMS
 // ─────────────────────────────────────────────
-const ACCT_TYPES=['Checking','Savings','Business Checking','Business Savings','Investment','Other'];
-const DEBT_TYPES=['Credit Card','Student Loan','Auto Loan','Personal Loan','Medical','Other'];
-const CAT_VC=['Deposit','Winner Payouts','VolleyScholar Transfer','Internal Transfer','Event Costs','Training Equipment','Gym Rental','Coach Pay','Apparel & Uniforms','Marketing & Branding','Software & Subscriptions','Professional Services','Bank Fees','Coaching Apparel','Owner Draw','Donation','Office Supplies','Other'];
-const PAY_HOW=['Venmo','VCo Card','CashApp','AG WF','BV > WF Transfer','Internal Transfer','Check','Cash','Other'];
+const ACCT_TYPES=['Business Checking','Business Savings','Checking','Investment','Savings','Other'];
+const DEBT_TYPES=['Auto Loan','Credit Card','Medical','Personal Loan','Student Loan','Other'];
+const CAT_VC=['Apparel & Uniforms','Bank Fees','Coach Pay','Coaching Apparel','Deposit','Donation','Event Costs','Gym Rental','Internal Transfer','Marketing & Branding','Office Supplies','Owner Draw','Professional Services','Software & Subscriptions','Training Equipment','VolleyScholar Transfer','Winner Payouts','Other'];
+const PAY_HOW=['AG Bound','AG WF','BV > WF Transfer','Cash','CashApp','Check','Crossbar','Internal Transfer','VCo Card','Venmo','Other'];
 
 function showSheet(title,body){
   document.getElementById('sheet-body').innerHTML=`<div class="sheet-title">${title}</div>${body}`;
@@ -1580,6 +1582,7 @@ function openSheet(type,extra){
     tx:`<div class="field"><label>Date</label><input id="f-date" type="date" value="${t}"></div>
       <div class="field"><label>Amount (negative = expense)</label><input id="f-amount" type="number" inputmode="decimal" step="0.01" placeholder="e.g. 150 or -44.59"></div>
       <div class="field"><label>Paid how</label><select id="f-how"><option value="">Select...</option>${selOpts(PAY_HOW)}</select></div>
+      <div class="field"><label>Account</label><select id="f-acct"><option value="">Select account (optional)...</option>${byName(D.volleyco.accounts||[]).map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('')}</select></div>
       <div class="field"><label>Category</label><select id="f-cat">${selOpts(CAT_VC)}</select></div>
       <div class="field"><label>Notes</label><input id="f-notes" type="text" placeholder="Description..."></div>
       <div class="form-btns"><button class="pill pill-primary pill-full" onclick="saveTx()">Save</button></div>`
@@ -1621,6 +1624,7 @@ function openSheet(type,extra){
     showSheet('Edit Transaction',`<div class="field"><label>Date</label><input id="f-date" type="date" value="${tx.date||''}"></div>
       <div class="field"><label>Amount</label><input id="f-amount" type="number" inputmode="decimal" step="0.01" value="${tx.amount}"></div>
       <div class="field"><label>Paid how</label><select id="f-how">${selOpts(['',...PAY_HOW],tx.paidHow)}</select></div>
+      <div class="field"><label>Account</label><select id="f-acct"><option value="">Select account (optional)...</option>${byName(D.volleyco.accounts||[]).map(a=>`<option value="${esc(a.id)}"${tx.accountId===a.id?' selected':''}>${esc(a.name)}</option>`).join('')}</select></div>
       <div class="field"><label>Category</label><select id="f-cat">${selOpts(CAT_VC,tx.category)}</select></div>
       <div class="field"><label>Notes</label><input id="f-notes" type="text" value="${esc(tx.notes||'')}"></div>
       <div class="form-btns"><button class="pill pill-primary" style="flex:2;padding:11px;font-size:13px" onclick="updateTx('${extra}')">Save</button><button class="pill pill-danger" style="flex:1;padding:11px;font-size:13px" onclick="deleteTx('${extra}');closeSheet()">Delete</button></div>`);
@@ -1657,8 +1661,8 @@ function saveIncome(){const amt=n(fv('f-amount'));if(!amt)return alert('Enter an
 function updateIncome(id){const i=D.personal.income.find(x=>x.id===id);if(!i)return;i.date=fv('f-date');i.amount=n(fv('f-amount'));i.source=fv('f-source').trim();i.notes=fv('f-notes').trim();save('p_income');closeSheet();render();}
 function deleteIncome(id){D.personal.income=D.personal.income.filter(x=>x.id!==id);save('p_income');render();}
 
-function saveTx(){const amt=n(fv('f-amount'));if(!amt)return alert('Enter an amount.');if(!D.volleyco.transactions)D.volleyco.transactions=[];D.volleyco.transactions.push({id:uid(),date:fv('f-date'),amount:amt,paidHow:fv('f-how'),category:fv('f-cat'),notes:fv('f-notes').trim()});save('vc_transactions');closeSheet();render();}
-function updateTx(id){const t=(D.volleyco.transactions||[]).find(x=>x.id===id);if(!t)return;t.date=fv('f-date');t.amount=n(fv('f-amount'));t.paidHow=fv('f-how');t.category=fv('f-cat');t.notes=fv('f-notes').trim();save('vc_transactions');closeSheet();render();}
+function saveTx(){const amt=n(fv('f-amount'));if(!amt)return alert('Enter an amount.');if(!D.volleyco.transactions)D.volleyco.transactions=[];D.volleyco.transactions.push({id:uid(),date:fv('f-date'),amount:amt,paidHow:fv('f-how'),accountId:fv('f-acct')||'',category:fv('f-cat'),notes:fv('f-notes').trim()});save('vc_transactions');closeSheet();render();}
+function updateTx(id){const t=(D.volleyco.transactions||[]).find(x=>x.id===id);if(!t)return;t.date=fv('f-date');t.amount=n(fv('f-amount'));t.paidHow=fv('f-how');t.accountId=fv('f-acct')||'';t.category=fv('f-cat');t.notes=fv('f-notes').trim();save('vc_transactions');closeSheet();render();}
 function deleteTx(id){D.volleyco.transactions=(D.volleyco.transactions||[]).filter(x=>x.id!==id);save('vc_transactions');render();}
 
 function scholarEntry(dir){
@@ -1702,7 +1706,7 @@ function savePPSettings(){const pp=getPP();pp.nextPayday=document.getElementById
 
 function openAddPPIncome(){
   const accounts=D.personal.accounts||[];
-  const opts=accounts.length?accounts.map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join(''):'<option value="">No accounts yet</option>';
+  const opts=accounts.length?byName(accounts).map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join(''):'<option value="">No accounts yet</option>';
   showSheet('Add Income',`
     <div class="field"><label>Label</label><input type="text" id="pp-lbl" placeholder="e.g. Andrew - SGWS, Andrew - Car check, Rian - VolleySeries"></div>
     <div class="field"><label>Amount</label><input type="number" inputmode="decimal" id="pp-amt" step="0.01" placeholder="0.00"></div>
@@ -1729,7 +1733,7 @@ function openAddAlloc(editId){
   const pp=getPP();
   const a=editId?(pp.allocations||[]).find(x=>x.id===editId):null;
   const accounts=D.personal.accounts||[];
-  const opts=accounts.map(x=>`<option value="${esc(x.id)}"${a&&a.destination===x.id?' selected':''}>${esc(x.name)}</option>`).join('');
+  const opts=byName(accounts).map(x=>`<option value="${esc(x.id)}"${a&&a.destination===x.id?' selected':''}>${esc(x.name)}</option>`).join('');
   const bills=D.personal.bills||[];
   const committed=pp.committedBills||[];
   const totalIn=(pp.income||[]).reduce((s,i)=>s+n(i.amount),0);
