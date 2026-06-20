@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Review VolleyCo Transactions</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Inter',sans-serif;background:#f7f7f7;color:#1a1a1a;font-size:14px;display:flex;align-items:flex-start;justify-content:center;min-height:100vh;padding:24px 16px}
+.card{max-width:640px;width:100%;background:#fff;border-radius:14px;border:1px solid #ececec;padding:28px}
+h1{font-size:18px;font-weight:700;margin-bottom:6px}
+p{font-size:13px;color:#666;line-height:1.6;margin-bottom:16px}
+.section-hd{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;margin:22px 0 10px;border-top:1px solid #eee;padding-top:18px}
+.section-hd:first-of-type{border-top:none;padding-top:0;margin-top:0}
+.flagcard{background:#fff8e1;border:1px solid #f0d98c;border-radius:10px;padding:14px 16px;margin-bottom:8px}
+.flagcard .desc{font-weight:600;font-size:13px}
+.flagcard .meta{font-size:12px;color:#777;margin-top:2px}
+.flip-row{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #f4f4f4}
+.row:last-child{border-bottom:none}
+.row-left{flex:1;min-width:0}
+.row-name{font-size:12.5px;font-weight:500}
+.row-meta{font-size:11px;color:#888;margin-top:2px}
+.opts{display:flex;gap:5px;flex-shrink:0}
+.opt{padding:6px 10px;border-radius:7px;border:1px solid #ddd;background:#fafafa;font-size:11.5px;font-weight:600;cursor:pointer;color:#555}
+.opt.sel{background:#5c4d8a;border-color:#5c4d8a;color:#fff}
+.btn{width:100%;padding:13px;background:#5c4d8a;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;margin-top:22px}
+.btn:hover{background:#4a3d72}
+.btn:disabled{background:#aaa;cursor:not-allowed}
+#status{font-size:13px;color:#666;text-align:center;min-height:20px;padding:8px 0}
+#status.ok{color:#2d7a5f;font-weight:600}
+#status.err{color:#a33030}
+#loading{text-align:center;color:#888;padding:30px 0}
+.checkbox-row{display:flex;align-items:center;gap:8px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Review &amp; Apply Fixes</h1>
+  <p>Pulled straight from your live VolleyCo data. Review each item below, then save.</p>
+  <div id="loading">Loading your transactions…</div>
+  <div id="content" style="display:none"></div>
+  <button class="btn" id="save-btn" style="display:none" onclick="applyFixes()">Save changes</button>
+  <div id="status"></div>
+</div>
+
+<script>
+const SB_URL='https://sumnlntgnycrctiohkzm.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN1bW5sbnRnbnljcmN0aW9oa3ptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NDI1MzcsImV4cCI6MjA5MDIxODUzN30.cgW_VlbCBB51i7ZcXmut9HZe5viaRNYVMwJ2dL3DS9g';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+let TXS=[];
+let flipTarget=null;
+const camp=[]; // {idx, choice}
+
+function fmt(v){return(v<0?'−':'')+'$'+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+async function load(){
+  try{
+    const{data,error}=await sb.from('finance_data').select('*').eq('key','vc_transactions').single();
+    if(error)throw error;
+    TXS=data.value||[];
+
+    // Find the AGVB transfer to flip
+    flipTarget=TXS.findIndex(t=>t.date==='2026-05-06' && /summer camp money/i.test(t.notes||'') && Math.abs(t.amount-3969)<0.01);
+
+    // Find summer camp deposits with blank/Other paidHow
+    TXS.forEach((t,idx)=>{
+      if(/summer camp/i.test(t.notes||'') && (!t.paidHow || t.paidHow==='Other') && t.amount>0){
+        const guess = /crossbar/i.test(t.notes||'') ? 'Crossbar' : null;
+        camp.push({idx, choice: guess});
+      }
+    });
+
+    render();
+  }catch(e){
+    document.getElementById('loading').textContent='Error loading data: '+e.message;
+  }
+}
+
+function render(){
+  document.getElementById('loading').style.display='none';
+  const c=document.getElementById('content');
+  c.style.display='block';
+  let h='';
+
+  if(flipTarget>=0){
+    const t=TXS[flipTarget];
+    h+=`<div class="section-hd">Flagged correction</div>
+    <div class="flagcard">
+      <div class="desc">${t.notes}</div>
+      <div class="meta">${t.date} · currently +${fmt(t.amount)}</div>
+      <div class="flip-row checkbox-row">
+        <input type="checkbox" id="flip-cb" checked>
+        <label for="flip-cb">Flip to an outflow (−${fmt(t.amount)}) — money moved from VolleyCo to AGVB</label>
+      </div>
+    </div>`;
+  }
+
+  if(camp.length){
+    h+=`<div class="section-hd">Summer camp deposits — set Paid How (${camp.length})</div>`;
+    camp.forEach((c,i)=>{
+      const t=TXS[c.idx];
+      h+=`<div class="row">
+        <div class="row-left"><div class="row-name">${t.notes}</div><div class="row-meta">${t.date} · +${fmt(t.amount)}</div></div>
+        <div class="opts" data-camp-i="${i}">
+          <button class="opt${c.choice==='Crossbar'?' sel':''}" onclick="setChoice(${i},'Crossbar')">Crossbar</button>
+          <button class="opt${c.choice==='AG Bound'?' sel':''}" onclick="setChoice(${i},'AG Bound')">AG Bound</button>
+          <button class="opt${c.choice==='Other'?' sel':''}" onclick="setChoice(${i},'Other')">Other</button>
+        </div>
+      </div>`;
+    });
+  }
+
+  c.innerHTML=h;
+  document.getElementById('save-btn').style.display='block';
+}
+
+function setChoice(i,val){
+  camp[i].choice=val;
+  const group=document.querySelector(`[data-camp-i="${i}"]`);
+  [...group.children].forEach(b=>b.classList.remove('sel'));
+  event.target.classList.add('sel');
+}
+
+async function applyFixes(){
+  const btn=document.getElementById('save-btn');
+  const status=document.getElementById('status');
+  btn.disabled=true;btn.textContent='Saving…';status.className='';status.textContent='';
+
+  // Apply flip
+  if(flipTarget>=0 && document.getElementById('flip-cb') && document.getElementById('flip-cb').checked){
+    TXS[flipTarget].amount = -Math.abs(TXS[flipTarget].amount);
+  }
+
+  // Apply paid-how choices
+  let unset=0;
+  camp.forEach(c=>{
+    if(c.choice){ TXS[c.idx].paidHow = c.choice; }
+    else unset++;
+  });
+
+  if(unset>0 && !confirm(unset+' summer camp item(s) have no Paid How selected and will be left unchanged. Continue saving the rest?')){
+    btn.disabled=false;btn.textContent='Save changes';
+    return;
+  }
+
+  try{
+    const{error}=await sb.from('finance_data').upsert(
+      {key:'vc_transactions',value:TXS,updated_at:new Date().toISOString()},
+      {onConflict:'key'}
+    );
+    if(error)throw error;
+    localStorage.setItem('hf_vc_transactions',JSON.stringify(TXS));
+    status.className='ok';
+    status.textContent='Saved! Redirecting to the app…';
+    btn.textContent='Saved!';
+    setTimeout(()=>window.location.href='/',1500);
+  }catch(e){
+    status.className='err';
+    status.textContent='Error: '+e.message;
+    btn.disabled=false;btn.textContent='Retry';
+  }
+}
+
+load();
+</script>
+</body>
+</html>
