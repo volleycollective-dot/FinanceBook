@@ -324,6 +324,7 @@ function money(v){const a=Math.abs(n(v));return(n(v)<0?'−':'')+'$'+a.toLocaleS
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fv(id){const e=document.getElementById(id);return e?e.value:'';}
 function fc(id){const e=document.getElementById(id);return e?e.checked:false;}
+function toggleTransferField(){const w=document.getElementById('f-transfer-wrap');if(w)w.style.display=fc('f-transfer')?'block':'none';}
 function selOpts(arr,sel){return arr.map(o=>`<option value="${esc(o)}"${o===sel?' selected':''}>${esc(o)}</option>`).join('');}
 function byName(arr){return [...(arr||[])].sort((a,b)=>(a.name||'').localeCompare(b.name||'',undefined,{sensitivity:'base'}));}
 
@@ -1259,8 +1260,9 @@ function renderTransactions(){
     grouped[mo].forEach(t=>{
       const amt=n(t.amount);
       const acctName=t.accountId?((D.volleyco.accounts||[]).find(a=>a.id===t.accountId)||{}).name:'';
+      const transferTag=t.transferId?' · 🔗 transfer':'';
       h+=`<div class="row center"><div class="row-main"><div class="row-name">${esc(t.notes||t.category||'Transaction')}</div>
-      <div class="row-sub">${t.date||''}${t.paidHow?' · '+esc(t.paidHow):''}${t.category?' · '+esc(t.category):''}${acctName?' · '+esc(acctName):''}</div></div>
+      <div class="row-sub">${t.date||''}${t.paidHow?' · '+esc(t.paidHow):''}${t.category?' · '+esc(t.category):''}${acctName?' · '+esc(acctName):''}${transferTag}</div></div>
       <div class="row-right"><div class="row-amt ${amt>=0?'pos':'neg'}">${amt>=0?'+':''}${money(amt)}</div>
       <div class="rpills"><button class="pill pill-ghost pill-sm" onclick="openSheet('tx-edit','${t.id}')">Edit</button><button class="pill pill-danger pill-sm" onclick="deleteTx('${t.id}')">Delete</button></div>
       </div></div>`;
@@ -1585,6 +1587,8 @@ function openSheet(type,extra){
       <div class="field"><label>Account</label><select id="f-acct"><option value="">Select account (optional)...</option>${byName(D.volleyco.accounts||[]).map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('')}</select></div>
       <div class="field"><label>Category</label><select id="f-cat">${selOpts(CAT_VC)}</select></div>
       <div class="field"><label>Notes</label><input id="f-notes" type="text" placeholder="Description..."></div>
+      <div class="field-check"><input type="checkbox" id="f-transfer" onchange="toggleTransferField()"> This is a transfer to another account</div>
+      <div class="field" id="f-transfer-wrap" style="display:none"><label>To account</label><select id="f-transfer-to"><option value="">Select account...</option>${byName(D.volleyco.accounts||[]).map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('')}</select></div>
       <div class="form-btns"><button class="pill pill-primary pill-full" onclick="saveTx()">Save</button></div>`
   };
   if(type==='bill'){showSheet('Add a Bill',forms.bill);}
@@ -1621,12 +1625,18 @@ function openSheet(type,extra){
   }else if(type==='tx'){showSheet('Add Transaction',forms.tx);}
   else if(type==='tx-edit'){
     const tx=(D.volleyco.transactions||[]).find(x=>x.id===extra);if(!tx)return;
+    const pair=tx.transferId?(D.volleyco.transactions||[]).find(x=>x.transferId===tx.transferId&&x.id!==tx.id):null;
     showSheet('Edit Transaction',`<div class="field"><label>Date</label><input id="f-date" type="date" value="${tx.date||''}"></div>
       <div class="field"><label>Amount</label><input id="f-amount" type="number" inputmode="decimal" step="0.01" value="${tx.amount}"></div>
       <div class="field"><label>Paid how</label><select id="f-how">${selOpts(['',...PAY_HOW],tx.paidHow)}</select></div>
       <div class="field"><label>Account</label><select id="f-acct"><option value="">Select account (optional)...</option>${byName(D.volleyco.accounts||[]).map(a=>`<option value="${esc(a.id)}"${tx.accountId===a.id?' selected':''}>${esc(a.name)}</option>`).join('')}</select></div>
       <div class="field"><label>Category</label><select id="f-cat">${selOpts(CAT_VC,tx.category)}</select></div>
       <div class="field"><label>Notes</label><input id="f-notes" type="text" value="${esc(tx.notes||'')}"></div>
+      ${pair?`<div class="field-check"><input type="checkbox" id="f-transfer" checked onchange="toggleTransferField()"> This is a transfer to another account</div>
+      <div class="field" id="f-transfer-wrap"><label>To account</label><select id="f-transfer-to"><option value="">Select account...</option>${byName(D.volleyco.accounts||[]).map(a=>`<option value="${esc(a.id)}"${pair.accountId===a.id?' selected':''}>${esc(a.name)}</option>`).join('')}</select></div>
+      <div style="font-size:11px;color:var(--ink3);margin:-6px 0 4px">Linked to "${esc(pair.notes||pair.category||'Transaction')}" — editing here updates both sides.</div>`
+      :`<div class="field-check"><input type="checkbox" id="f-transfer" onchange="toggleTransferField()"> This is a transfer to another account</div>
+      <div class="field" id="f-transfer-wrap" style="display:none"><label>To account</label><select id="f-transfer-to"><option value="">Select account...</option>${byName(D.volleyco.accounts||[]).map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('')}</select></div>`}
       <div class="form-btns"><button class="pill pill-primary" style="flex:2;padding:11px;font-size:13px" onclick="updateTx('${extra}')">Save</button><button class="pill pill-danger" style="flex:1;padding:11px;font-size:13px" onclick="deleteTx('${extra}');closeSheet()">Delete</button></div>`);
   }else if(type==='scholar-edit'){
     const l=(D.volleyco.scholarLedger||[]).find(x=>x.id===extra);if(!l)return;
@@ -1661,9 +1671,56 @@ function saveIncome(){const amt=n(fv('f-amount'));if(!amt)return alert('Enter an
 function updateIncome(id){const i=D.personal.income.find(x=>x.id===id);if(!i)return;i.date=fv('f-date');i.amount=n(fv('f-amount'));i.source=fv('f-source').trim();i.notes=fv('f-notes').trim();save('p_income');closeSheet();render();}
 function deleteIncome(id){D.personal.income=D.personal.income.filter(x=>x.id!==id);save('p_income');render();}
 
-function saveTx(){const amt=n(fv('f-amount'));if(!amt)return alert('Enter an amount.');if(!D.volleyco.transactions)D.volleyco.transactions=[];D.volleyco.transactions.push({id:uid(),date:fv('f-date'),amount:amt,paidHow:fv('f-how'),accountId:fv('f-acct')||'',category:fv('f-cat'),notes:fv('f-notes').trim()});save('vc_transactions');closeSheet();render();}
-function updateTx(id){const t=(D.volleyco.transactions||[]).find(x=>x.id===id);if(!t)return;t.date=fv('f-date');t.amount=n(fv('f-amount'));t.paidHow=fv('f-how');t.accountId=fv('f-acct')||'';t.category=fv('f-cat');t.notes=fv('f-notes').trim();save('vc_transactions');closeSheet();render();}
-function deleteTx(id){D.volleyco.transactions=(D.volleyco.transactions||[]).filter(x=>x.id!==id);save('vc_transactions');render();}
+function saveTx(){
+  const amt=n(fv('f-amount'));if(!amt)return alert('Enter an amount.');
+  if(!D.volleyco.transactions)D.volleyco.transactions=[];
+  const isTransfer=fc('f-transfer');
+  const toAcct=isTransfer?fv('f-transfer-to'):'';
+  if(isTransfer&&!toAcct)return alert('Pick a "To account" for the transfer, or uncheck the transfer box.');
+  const date=fv('f-date'),how=fv('f-how'),cat=fv('f-cat'),notes=fv('f-notes').trim(),acctId=fv('f-acct')||'';
+  const transferId=isTransfer?uid():'';
+  D.volleyco.transactions.push({id:uid(),date,amount:amt,paidHow:how,accountId:acctId,category:cat,notes,transferId});
+  if(isTransfer){
+    D.volleyco.transactions.push({id:uid(),date,amount:-amt,paidHow:how,accountId:toAcct,category:cat,notes,transferId});
+  }
+  save('vc_transactions');closeSheet();render();
+}
+function updateTx(id){
+  const t=(D.volleyco.transactions||[]).find(x=>x.id===id);if(!t)return;
+  const wasTransferId=t.transferId||'';
+  const isTransfer=fc('f-transfer');
+  const toAcct=isTransfer?fv('f-transfer-to'):'';
+  if(isTransfer&&!toAcct)return alert('Pick a "To account" for the transfer, or uncheck the transfer box.');
+  t.date=fv('f-date');t.amount=n(fv('f-amount'));t.paidHow=fv('f-how');t.accountId=fv('f-acct')||'';t.category=fv('f-cat');t.notes=fv('f-notes').trim();
+
+  const pair=wasTransferId?(D.volleyco.transactions||[]).find(x=>x.transferId===wasTransferId&&x.id!==t.id):null;
+
+  if(isTransfer){
+    const transferId=wasTransferId||uid();
+    t.transferId=transferId;
+    if(pair){
+      // keep the existing pair in sync
+      pair.date=t.date;pair.amount=-t.amount;pair.paidHow=t.paidHow;pair.category=t.category;pair.notes=t.notes;pair.accountId=toAcct;pair.transferId=transferId;
+    }else{
+      // newly marked as a transfer — create the other leg
+      D.volleyco.transactions.push({id:uid(),date:t.date,amount:-t.amount,paidHow:t.paidHow,accountId:toAcct,category:t.category,notes:t.notes,transferId});
+    }
+  }else if(pair){
+    // unchecked — unlink, leave the other leg as a standalone transaction
+    pair.transferId='';
+    t.transferId='';
+  }
+
+  save('vc_transactions');closeSheet();render();
+}
+function deleteTx(id){
+  const t=(D.volleyco.transactions||[]).find(x=>x.id===id);if(!t)return;
+  const pair=t.transferId?(D.volleyco.transactions||[]).find(x=>x.transferId===t.transferId&&x.id!==t.id):null;
+  let deleteBoth=false;
+  if(pair)deleteBoth=confirm('This is one side of a transfer. Delete both sides?');
+  D.volleyco.transactions=(D.volleyco.transactions||[]).filter(x=>x.id!==id&&!(deleteBoth&&pair&&x.id===pair.id));
+  save('vc_transactions');render();
+}
 
 function scholarEntry(dir){
   showSheet(dir>0?'Add Deposit':'Record Disbursement',`
